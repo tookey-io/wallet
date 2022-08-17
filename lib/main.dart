@@ -1,5 +1,13 @@
+import 'dart:convert';
+import 'dart:developer';
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'client.dart';
 import 'ffi.dart';
+import 'executor.dart';
+import 'sign.dart';
 
 void main() {
   runApp(const MyApp());
@@ -51,15 +59,59 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   // These futures belong to the state and are only initialized once,
   // in the initState method.
-  late Future<Platform> platform;
-  late Future<bool> isRelease;
+  late Signer signer;
+  late Future<Signer> signerInitialization;
+  late Future<String> signature;
+
+  Future<Signer> initSigner() async {
+    signer = await Signer.create("http://10.0.2.2:8000", await rootBundle.loadString("assets/local-share1.json"), participants: [1,2], room: "default-signing-offline");
+    return signer;
+  }
 
   @override
   void initState() {
+    signerInitialization = initSigner();
+    signature = signerInitialization.then((signer) => signer.sign("hello"));
     super.initState();
-    platform = api.platform();
-    isRelease = api.rustReleaseMode();
   }
+
+  // void startMultiply() {
+  //   var rng = math.Random();
+  //   var rndId = rng.nextInt(1000000);
+
+  //   setState(() {
+  //     complete = false;
+  //     id = rndId;
+  //     log("Create multiply with id $id");
+  //     multiply = api.multiplyIncoming(id: rndId).whenComplete(() => {
+  //           setState(() {
+  //             complete = true;
+  //           })
+  //         });
+
+  //     outgoing = api.createOutgoingStream(id: rndId);
+  //     outgoing?.listen((event) {
+  //       if (id != rndId) {
+  //         log("outdated stream");
+  //         return;
+  //       }
+
+  //       log("Test: $event $rndId $id");
+  //       if (event is OutgoingMessage_Multiply) {
+  //         setState(() {
+  //           lastValue = event.field0;
+  //         });
+  //         log("Multiply incoming: $lastValue");
+  //         api.sendIncoming(
+  //             id: rndId, value: IncomingMessage.multiply(event.field0));
+  //       }
+  //       if (event is OutgoingMessage_Close) {
+  //         log("Close channel $rndId");
+  //         api.closeOutgoinStream(id: rndId);
+  //       }
+  //     });
+  //   });
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -94,7 +146,7 @@ class _MyHomePageState extends State<MyHomePage> {
           // horizontal).
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            const Text("You're running on"),
+            const Text("Signer"),
             // To render the results of a Future, a FutureBuilder is used which
             // turns a Future into an AsyncSnapshot, which can be used to
             // extract the error state, the loading state and the data if
@@ -103,41 +155,31 @@ class _MyHomePageState extends State<MyHomePage> {
             // Here, the generic type that the FutureBuilder manages is
             // explicitly named, because if omitted the snapshot will have the
             // type of AsyncSnapshot<Object?>.
-            FutureBuilder<List<dynamic>>(
+            FutureBuilder<void>(
               // We await two unrelated futures here, so the type has to be
               // List<dynamic>.
-              future: Future.wait([platform, isRelease]),
+              future: signerInitialization,
               builder: (context, snap) {
-                final style = Theme.of(context).textTheme.headline4;
-                if (snap.error != null) {
-                  // An error has been encountered, so give an appropriate response and
-                  // pass the error details to an unobstructive tooltip.
-                  debugPrint(snap.error.toString());
-                  return Tooltip(
-                    message: snap.error.toString(),
-                    child: Text('Unknown OS', style: style),
-                  );
+                switch (snap.connectionState) {
+                  case ConnectionState.none:
+                    return const Text("Communication is not initialized");
+                  case ConnectionState.waiting:
+                    return const Text("Communication is a progress.. ");
+                  case ConnectionState.active:
+                    return const Text("Unreachable.. ");
+                  case ConnectionState.done:
+                    if (snap.error != null) {
+                      log(snap.error.toString());
+                      return Tooltip(
+                        message: snap.error.toString(),
+                        child: const Text('Communication has been failed'),
+                      );
+                    }
+                    // final data = snap.data;
+                    // if (data == null) return const CircularProgressIndicator();
+
+                    return const Text("Connection is ready");
                 }
-
-                // Guard return here, the data is not ready yet.
-                final data = snap.data;
-                if (data == null) return const CircularProgressIndicator();
-
-                // Finally, retrieve the data expected in the same order provided
-                // to the FutureBuilder.future.
-                final Platform platform = data[0];
-                final release = data[1] ? 'Release' : 'Debug';
-                final text = const {
-                      Platform.Android: 'Android',
-                      Platform.Ios: 'iOS',
-                      Platform.MacApple: 'MacOS with Apple Silicon',
-                      Platform.MacIntel: 'MacOS',
-                      Platform.Windows: 'Windows',
-                      Platform.Unix: 'Unix',
-                      Platform.Wasm: 'the Web',
-                    }[platform] ??
-                    'Unknown OS';
-                return Text('$text ($release)', style: style);
               },
             )
           ],

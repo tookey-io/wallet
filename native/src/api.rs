@@ -1,59 +1,141 @@
-// This is the entry point of your Rust library.
-// When adding new code to your project, note that only items used
-// here will be transformed to their Dart equivalents.
+use std::sync::Mutex;
+use std::{collections::HashMap, time::Duration};
 
-// A plain enum without any fields. This is similar to Dart- or C-style enums.
-// flutter_rust_bridge is capable of generating code for enums with fields
-// (@freezed classes in Dart and tagged unions in C).
-pub enum Platform {
-    Unknown,
-    Android,
-    Ios,
-    Windows,
-    Unix,
-    MacIntel,
-    MacApple,
-    Wasm,
+use crate::ecdsa::signer::{sign_offline, sign_online};
+use anyhow::{anyhow, Context, Error, Result};
+use curv::elliptic::curves::Secp256k1;
+use flutter_rust_bridge::{support, StreamSink};
+use futures::{channel::mpsc::Sender, StreamExt};
+use round_based::Msg;
+use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
+use tss::ecdsa::state_machine::keygen::LocalKey;
+
+support::lazy_static! {
+    static ref OUTGOING: Mutex<HashMap<u32, StreamSink<OutgoingMessage>>> = Mutex::new(HashMap::new());
+    static ref INCOMING: Mutex<HashMap<u32, Sender<IncomingMessage>>> = Mutex::new(HashMap::new());
+    static ref RUNTIME: Mutex<tokio::runtime::Runtime> = Mutex::new(tokio::runtime::Runtime::new().unwrap());
 }
 
-// A function definition in Rust. Similar to Dart, the return type must always be named
-// and is never inferred.
-pub fn platform() -> Platform {
-    // This is a macro, a special expression that expands into code. In Rust, all macros
-    // end with an exclamation mark and can be invoked with all kinds of brackets (parentheses,
-    // brackets and curly braces). However, certain conventions exist, for example the
-    // vector macro is almost always invoked as vec![..].
-    //
-    // The cfg!() macro returns a boolean value based on the current compiler configuration.
-    // When attached to expressions (#[cfg(..)] form), they show or hide the expression at compile time.
-    // Here, however, they evaluate to runtime values, which may or may not be optimized out
-    // by the compiler. A variety of configurations are demonstrated here which cover most of
-    // the modern oeprating systems. Try running the Flutter application on different machines
-    // and see if it matches your expected OS.
-    //
-    // Furthermore, in Rust, the last expression in a function is the return value and does
-    // not have the trailing semicolon. This entire if-else chain forms a single expression.
-    if cfg!(windows) {
-        Platform::Windows
-    } else if cfg!(target_os = "android") {
-        Platform::Android
-    } else if cfg!(target_os = "ios") {
-        Platform::Ios
-    } else if cfg!(all(target_os = "macos", target_arch = "aarch64")) {
-        Platform::MacApple
-    } else if cfg!(target_os = "macos") {
-        Platform::MacIntel
-    } else if cfg!(target_family = "wasm") {
-        Platform::Wasm
-    } else if cfg!(unix) {
-        Platform::Unix
-    } else {
-        Platform::Unknown
+#[derive(Debug, Serialize, Deserialize)]
+pub enum OutgoingMessage {
+    Msg(String),
+    Multiply(u32),
+    Close,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum IncomingMessage {
+    Msg(String),
+    Multiply(u32),
+    Close,
+}
+
+/// Creates channel to obtain outgoing messages for broadcast/send them
+pub fn create_outgoing_stream(outgoing: StreamSink<OutgoingMessage>, id: u32) -> Result<()> {
+    let mut map = OUTGOING.lock().unwrap();
+
+    if map.contains_key(&id) {
+        return Err(anyhow!("Already exist id!"));
     }
+    map.insert(id, outgoing);
+    Ok(())
 }
 
-// The convention for Rust identifiers is the snake_case,
-// and they are automatically converted to camelCase on the Dart side.
-pub fn rust_release_mode() -> bool {
-    cfg!(not(debug_assertions))
+pub fn close_outgoin_stream(id: u32) {
+    let _ = INCOMING
+        .lock()
+        .unwrap()
+        .get_mut(&id)
+        .unwrap()
+        .try_send(IncomingMessage::Close);
+    let _ = OUTGOING.lock().unwrap().remove(&id);
+}
+
+pub fn sign(id: u32, key: String, parties: Vec<u16>, index: u16) -> Result<()> {
+    let runtime = RUNTIME.lock().unwrap();
+
+    let key: LocalKey<Secp256k1> = serde_json::from_str(key.as_str()).unwrap();
+
+    let stage = runtime.block_on(async move {
+        let mut map = OUTGOING.lock().map_err(|e| anyhow!("failed"))?;
+        let outgoing = map.get_mut(&id).ok_or(anyhow!("Stream not found"))?;
+
+        let (sender, mut receiver) = futures::channel::mpsc::channel(102400);
+        {
+            INCOMING.lock().unwrap().insert(id, sender);
+        };
+
+        let stage = sign_offline(outgoing, &mut receiver, index, key, parties)
+            .await
+            .context("stage failed")?;
+
+        Ok::<_, Error>(stage)
+    })?;
+
+    Ok::<(), Error>(())
+}
+
+pub fn multiply_incoming(id: u32) -> Result<u32> {
+    let runtime = RUNTIME.lock().unwrap();
+
+    Ok(runtime.block_on(async {
+        let (sender, mut receiver) = futures::channel::mpsc::channel(102400);
+        // Store channel
+        {
+            INCOMING.lock().unwrap().insert(id, sender);
+        }
+
+        let mut result = 0u32;
+
+        loop {
+            if let Some(incoming) = receiver.next().await {
+                match incoming {
+                    IncomingMessage::Multiply(value) => {
+                        tokio::time::sleep(Duration::from_millis(500)).await;
+                        OUTGOING
+                            .lock()
+                            .unwrap()
+                            .get(&id)
+                            .unwrap()
+                            .add(OutgoingMessage::Multiply(value * 2));
+                        result = value * 2;
+
+                        if result > 10 {
+                            OUTGOING
+                                .lock()
+                                .unwrap()
+                                .get(&id)
+                                .unwrap()
+                                .add(OutgoingMessage::Close);
+                            break;
+                        }
+                    }
+                    IncomingMessage::Close => {
+                        OUTGOING
+                            .lock()
+                            .unwrap()
+                            .get(&id)
+                            .unwrap()
+                            .add(OutgoingMessage::Close);
+                        break;
+                    }
+                    _ => {}
+                }
+            }
+
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        }
+
+        result
+    }))
+}
+
+pub fn send_incoming(id: u32, value: IncomingMessage) -> Result<()> {
+    Ok(INCOMING
+        .lock()
+        .unwrap()
+        .get_mut(&id)
+        .context("channel not found")?
+        .try_send(value)?)
 }

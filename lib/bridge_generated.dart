@@ -5,31 +5,64 @@
 
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:freezed_annotation/freezed_annotation.dart';
 
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter_rust_bridge/flutter_rust_bridge.dart';
 import 'dart:ffi' as ffi;
 
+part 'bridge_generated.freezed.dart';
+
 abstract class Native {
-  Future<Platform> platform({dynamic hint});
+  /// Creates channel to obtain outgoing messages for broadcast/send them
+  Stream<OutgoingMessage> createOutgoingStream({required int id, dynamic hint});
 
-  FlutterRustBridgeTaskConstMeta get kPlatformConstMeta;
+  FlutterRustBridgeTaskConstMeta get kCreateOutgoingStreamConstMeta;
 
-  Future<bool> rustReleaseMode({dynamic hint});
+  Future<void> closeOutgoinStream({required int id, dynamic hint});
 
-  FlutterRustBridgeTaskConstMeta get kRustReleaseModeConstMeta;
+  FlutterRustBridgeTaskConstMeta get kCloseOutgoinStreamConstMeta;
+
+  Future<void> sign(
+      {required int id,
+      required String key,
+      required Uint16List parties,
+      required int index,
+      dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kSignConstMeta;
+
+  Future<int> multiplyIncoming({required int id, dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kMultiplyIncomingConstMeta;
+
+  Future<void> sendIncoming(
+      {required int id, required IncomingMessage value, dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kSendIncomingConstMeta;
 }
 
-enum Platform {
-  Unknown,
-  Android,
-  Ios,
-  Windows,
-  Unix,
-  MacIntel,
-  MacApple,
-  Wasm,
+@freezed
+class IncomingMessage with _$IncomingMessage {
+  const factory IncomingMessage.msg(
+    String field0,
+  ) = IncomingMessage_Msg;
+  const factory IncomingMessage.multiply(
+    int field0,
+  ) = IncomingMessage_Multiply;
+  const factory IncomingMessage.close() = IncomingMessage_Close;
+}
+
+@freezed
+class OutgoingMessage with _$OutgoingMessage {
+  const factory OutgoingMessage.msg(
+    String field0,
+  ) = OutgoingMessage_Msg;
+  const factory OutgoingMessage.multiply(
+    int field0,
+  ) = OutgoingMessage_Multiply;
+  const factory OutgoingMessage.close() = OutgoingMessage_Close;
 }
 
 class NativeImpl extends FlutterRustBridgeBase<NativeWire> implements Native {
@@ -38,53 +71,195 @@ class NativeImpl extends FlutterRustBridgeBase<NativeWire> implements Native {
 
   NativeImpl.raw(NativeWire inner) : super(inner);
 
-  Future<Platform> platform({dynamic hint}) =>
-      executeNormal(FlutterRustBridgeTask(
-        callFfi: (port_) => inner.wire_platform(port_),
-        parseSuccessData: _wire2api_platform,
-        constMeta: kPlatformConstMeta,
-        argValues: [],
+  Stream<OutgoingMessage> createOutgoingStream(
+          {required int id, dynamic hint}) =>
+      executeStream(FlutterRustBridgeTask(
+        callFfi: (port_) =>
+            inner.wire_create_outgoing_stream(port_, _api2wire_u32(id)),
+        parseSuccessData: _wire2api_outgoing_message,
+        constMeta: kCreateOutgoingStreamConstMeta,
+        argValues: [id],
         hint: hint,
       ));
 
-  FlutterRustBridgeTaskConstMeta get kPlatformConstMeta =>
+  FlutterRustBridgeTaskConstMeta get kCreateOutgoingStreamConstMeta =>
       const FlutterRustBridgeTaskConstMeta(
-        debugName: "platform",
-        argNames: [],
+        debugName: "create_outgoing_stream",
+        argNames: ["id"],
       );
 
-  Future<bool> rustReleaseMode({dynamic hint}) =>
+  Future<void> closeOutgoinStream({required int id, dynamic hint}) =>
       executeNormal(FlutterRustBridgeTask(
-        callFfi: (port_) => inner.wire_rust_release_mode(port_),
-        parseSuccessData: _wire2api_bool,
-        constMeta: kRustReleaseModeConstMeta,
-        argValues: [],
+        callFfi: (port_) =>
+            inner.wire_close_outgoin_stream(port_, _api2wire_u32(id)),
+        parseSuccessData: _wire2api_unit,
+        constMeta: kCloseOutgoinStreamConstMeta,
+        argValues: [id],
         hint: hint,
       ));
 
-  FlutterRustBridgeTaskConstMeta get kRustReleaseModeConstMeta =>
+  FlutterRustBridgeTaskConstMeta get kCloseOutgoinStreamConstMeta =>
       const FlutterRustBridgeTaskConstMeta(
-        debugName: "rust_release_mode",
-        argNames: [],
+        debugName: "close_outgoin_stream",
+        argNames: ["id"],
+      );
+
+  Future<void> sign(
+          {required int id,
+          required String key,
+          required Uint16List parties,
+          required int index,
+          dynamic hint}) =>
+      executeNormal(FlutterRustBridgeTask(
+        callFfi: (port_) => inner.wire_sign(
+            port_,
+            _api2wire_u32(id),
+            _api2wire_String(key),
+            _api2wire_uint_16_list(parties),
+            _api2wire_u16(index)),
+        parseSuccessData: _wire2api_unit,
+        constMeta: kSignConstMeta,
+        argValues: [id, key, parties, index],
+        hint: hint,
+      ));
+
+  FlutterRustBridgeTaskConstMeta get kSignConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "sign",
+        argNames: ["id", "key", "parties", "index"],
+      );
+
+  Future<int> multiplyIncoming({required int id, dynamic hint}) =>
+      executeNormal(FlutterRustBridgeTask(
+        callFfi: (port_) =>
+            inner.wire_multiply_incoming(port_, _api2wire_u32(id)),
+        parseSuccessData: _wire2api_u32,
+        constMeta: kMultiplyIncomingConstMeta,
+        argValues: [id],
+        hint: hint,
+      ));
+
+  FlutterRustBridgeTaskConstMeta get kMultiplyIncomingConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "multiply_incoming",
+        argNames: ["id"],
+      );
+
+  Future<void> sendIncoming(
+          {required int id, required IncomingMessage value, dynamic hint}) =>
+      executeNormal(FlutterRustBridgeTask(
+        callFfi: (port_) => inner.wire_send_incoming(port_, _api2wire_u32(id),
+            _api2wire_box_autoadd_incoming_message(value)),
+        parseSuccessData: _wire2api_unit,
+        constMeta: kSendIncomingConstMeta,
+        argValues: [id, value],
+        hint: hint,
+      ));
+
+  FlutterRustBridgeTaskConstMeta get kSendIncomingConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "send_incoming",
+        argNames: ["id", "value"],
       );
 
   // Section: api2wire
+  ffi.Pointer<wire_uint_8_list> _api2wire_String(String raw) {
+    return _api2wire_uint_8_list(utf8.encoder.convert(raw));
+  }
+
+  ffi.Pointer<wire_IncomingMessage> _api2wire_box_autoadd_incoming_message(
+      IncomingMessage raw) {
+    final ptr = inner.new_box_autoadd_incoming_message_0();
+    _api_fill_to_wire_incoming_message(raw, ptr.ref);
+    return ptr;
+  }
+
+  int _api2wire_u16(int raw) {
+    return raw;
+  }
+
+  int _api2wire_u32(int raw) {
+    return raw;
+  }
+
+  int _api2wire_u8(int raw) {
+    return raw;
+  }
+
+  ffi.Pointer<wire_uint_16_list> _api2wire_uint_16_list(Uint16List raw) {
+    final ans = inner.new_uint_16_list_0(raw.length);
+    ans.ref.ptr.asTypedList(raw.length).setAll(0, raw);
+    return ans;
+  }
+
+  ffi.Pointer<wire_uint_8_list> _api2wire_uint_8_list(Uint8List raw) {
+    final ans = inner.new_uint_8_list_0(raw.length);
+    ans.ref.ptr.asTypedList(raw.length).setAll(0, raw);
+    return ans;
+  }
 
   // Section: api_fill_to_wire
 
+  void _api_fill_to_wire_box_autoadd_incoming_message(
+      IncomingMessage apiObj, ffi.Pointer<wire_IncomingMessage> wireObj) {
+    _api_fill_to_wire_incoming_message(apiObj, wireObj.ref);
+  }
+
+  void _api_fill_to_wire_incoming_message(
+      IncomingMessage apiObj, wire_IncomingMessage wireObj) {
+    if (apiObj is IncomingMessage_Msg) {
+      wireObj.tag = 0;
+      wireObj.kind = inner.inflate_IncomingMessage_Msg();
+      wireObj.kind.ref.Msg.ref.field0 = _api2wire_String(apiObj.field0);
+    }
+    if (apiObj is IncomingMessage_Multiply) {
+      wireObj.tag = 1;
+      wireObj.kind = inner.inflate_IncomingMessage_Multiply();
+      wireObj.kind.ref.Multiply.ref.field0 = _api2wire_u32(apiObj.field0);
+    }
+    if (apiObj is IncomingMessage_Close) {
+      wireObj.tag = 2;
+      return;
+    }
+  }
 }
 
 // Section: wire2api
-bool _wire2api_bool(dynamic raw) {
-  return raw as bool;
+String _wire2api_String(dynamic raw) {
+  return raw as String;
 }
 
-int _wire2api_i32(dynamic raw) {
+OutgoingMessage _wire2api_outgoing_message(dynamic raw) {
+  switch (raw[0]) {
+    case 0:
+      return OutgoingMessage_Msg(
+        _wire2api_String(raw[1]),
+      );
+    case 1:
+      return OutgoingMessage_Multiply(
+        _wire2api_u32(raw[1]),
+      );
+    case 2:
+      return OutgoingMessage_Close();
+    default:
+      throw Exception("unreachable");
+  }
+}
+
+int _wire2api_u32(dynamic raw) {
   return raw as int;
 }
 
-Platform _wire2api_platform(dynamic raw) {
-  return Platform.values[raw];
+int _wire2api_u8(dynamic raw) {
+  return raw as int;
+}
+
+Uint8List _wire2api_uint_8_list(dynamic raw) {
+  return raw as Uint8List;
+}
+
+void _wire2api_unit(dynamic raw) {
+  return;
 }
 
 // ignore_for_file: camel_case_types, non_constant_identifier_names, avoid_positional_boolean_parameters, annotate_overrides, constant_identifier_names
@@ -109,33 +284,162 @@ class NativeWire implements FlutterRustBridgeWireBase {
           lookup)
       : _lookup = lookup;
 
-  void wire_platform(
+  void wire_create_outgoing_stream(
     int port_,
+    int id,
   ) {
-    return _wire_platform(
+    return _wire_create_outgoing_stream(
       port_,
+      id,
     );
   }
 
-  late final _wire_platformPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
-          'wire_platform');
-  late final _wire_platform =
-      _wire_platformPtr.asFunction<void Function(int)>();
+  late final _wire_create_outgoing_streamPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64, ffi.Uint32)>>(
+          'wire_create_outgoing_stream');
+  late final _wire_create_outgoing_stream =
+      _wire_create_outgoing_streamPtr.asFunction<void Function(int, int)>();
 
-  void wire_rust_release_mode(
+  void wire_close_outgoin_stream(
     int port_,
+    int id,
   ) {
-    return _wire_rust_release_mode(
+    return _wire_close_outgoin_stream(
       port_,
+      id,
     );
   }
 
-  late final _wire_rust_release_modePtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
-          'wire_rust_release_mode');
-  late final _wire_rust_release_mode =
-      _wire_rust_release_modePtr.asFunction<void Function(int)>();
+  late final _wire_close_outgoin_streamPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64, ffi.Uint32)>>(
+          'wire_close_outgoin_stream');
+  late final _wire_close_outgoin_stream =
+      _wire_close_outgoin_streamPtr.asFunction<void Function(int, int)>();
+
+  void wire_sign(
+    int port_,
+    int id,
+    ffi.Pointer<wire_uint_8_list> key,
+    ffi.Pointer<wire_uint_16_list> parties,
+    int index,
+  ) {
+    return _wire_sign(
+      port_,
+      id,
+      key,
+      parties,
+      index,
+    );
+  }
+
+  late final _wire_signPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(
+              ffi.Int64,
+              ffi.Uint32,
+              ffi.Pointer<wire_uint_8_list>,
+              ffi.Pointer<wire_uint_16_list>,
+              ffi.Uint16)>>('wire_sign');
+  late final _wire_sign = _wire_signPtr.asFunction<
+      void Function(int, int, ffi.Pointer<wire_uint_8_list>,
+          ffi.Pointer<wire_uint_16_list>, int)>();
+
+  void wire_multiply_incoming(
+    int port_,
+    int id,
+  ) {
+    return _wire_multiply_incoming(
+      port_,
+      id,
+    );
+  }
+
+  late final _wire_multiply_incomingPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64, ffi.Uint32)>>(
+          'wire_multiply_incoming');
+  late final _wire_multiply_incoming =
+      _wire_multiply_incomingPtr.asFunction<void Function(int, int)>();
+
+  void wire_send_incoming(
+    int port_,
+    int id,
+    ffi.Pointer<wire_IncomingMessage> value,
+  ) {
+    return _wire_send_incoming(
+      port_,
+      id,
+      value,
+    );
+  }
+
+  late final _wire_send_incomingPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Int64, ffi.Uint32,
+              ffi.Pointer<wire_IncomingMessage>)>>('wire_send_incoming');
+  late final _wire_send_incoming = _wire_send_incomingPtr
+      .asFunction<void Function(int, int, ffi.Pointer<wire_IncomingMessage>)>();
+
+  ffi.Pointer<wire_IncomingMessage> new_box_autoadd_incoming_message_0() {
+    return _new_box_autoadd_incoming_message_0();
+  }
+
+  late final _new_box_autoadd_incoming_message_0Ptr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<wire_IncomingMessage> Function()>>(
+          'new_box_autoadd_incoming_message_0');
+  late final _new_box_autoadd_incoming_message_0 =
+      _new_box_autoadd_incoming_message_0Ptr
+          .asFunction<ffi.Pointer<wire_IncomingMessage> Function()>();
+
+  ffi.Pointer<wire_uint_16_list> new_uint_16_list_0(
+    int len,
+  ) {
+    return _new_uint_16_list_0(
+      len,
+    );
+  }
+
+  late final _new_uint_16_list_0Ptr = _lookup<
+      ffi.NativeFunction<
+          ffi.Pointer<wire_uint_16_list> Function(
+              ffi.Int32)>>('new_uint_16_list_0');
+  late final _new_uint_16_list_0 = _new_uint_16_list_0Ptr
+      .asFunction<ffi.Pointer<wire_uint_16_list> Function(int)>();
+
+  ffi.Pointer<wire_uint_8_list> new_uint_8_list_0(
+    int len,
+  ) {
+    return _new_uint_8_list_0(
+      len,
+    );
+  }
+
+  late final _new_uint_8_list_0Ptr = _lookup<
+      ffi.NativeFunction<
+          ffi.Pointer<wire_uint_8_list> Function(
+              ffi.Int32)>>('new_uint_8_list_0');
+  late final _new_uint_8_list_0 = _new_uint_8_list_0Ptr
+      .asFunction<ffi.Pointer<wire_uint_8_list> Function(int)>();
+
+  ffi.Pointer<IncomingMessageKind> inflate_IncomingMessage_Msg() {
+    return _inflate_IncomingMessage_Msg();
+  }
+
+  late final _inflate_IncomingMessage_MsgPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<IncomingMessageKind> Function()>>(
+          'inflate_IncomingMessage_Msg');
+  late final _inflate_IncomingMessage_Msg = _inflate_IncomingMessage_MsgPtr
+      .asFunction<ffi.Pointer<IncomingMessageKind> Function()>();
+
+  ffi.Pointer<IncomingMessageKind> inflate_IncomingMessage_Multiply() {
+    return _inflate_IncomingMessage_Multiply();
+  }
+
+  late final _inflate_IncomingMessage_MultiplyPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<IncomingMessageKind> Function()>>(
+          'inflate_IncomingMessage_Multiply');
+  late final _inflate_IncomingMessage_Multiply =
+      _inflate_IncomingMessage_MultiplyPtr
+          .asFunction<ffi.Pointer<IncomingMessageKind> Function()>();
 
   void free_WireSyncReturnStruct(
     WireSyncReturnStruct val,
@@ -164,6 +468,46 @@ class NativeWire implements FlutterRustBridgeWireBase {
           'store_dart_post_cobject');
   late final _store_dart_post_cobject = _store_dart_post_cobjectPtr
       .asFunction<void Function(DartPostCObjectFnType)>();
+}
+
+class wire_uint_8_list extends ffi.Struct {
+  external ffi.Pointer<ffi.Uint8> ptr;
+
+  @ffi.Int32()
+  external int len;
+}
+
+class wire_uint_16_list extends ffi.Struct {
+  external ffi.Pointer<ffi.Uint16> ptr;
+
+  @ffi.Int32()
+  external int len;
+}
+
+class wire_IncomingMessage_Msg extends ffi.Struct {
+  external ffi.Pointer<wire_uint_8_list> field0;
+}
+
+class wire_IncomingMessage_Multiply extends ffi.Struct {
+  @ffi.Uint32()
+  external int field0;
+}
+
+class wire_IncomingMessage_Close extends ffi.Opaque {}
+
+class IncomingMessageKind extends ffi.Union {
+  external ffi.Pointer<wire_IncomingMessage_Msg> Msg;
+
+  external ffi.Pointer<wire_IncomingMessage_Multiply> Multiply;
+
+  external ffi.Pointer<wire_IncomingMessage_Close> Close;
+}
+
+class wire_IncomingMessage extends ffi.Struct {
+  @ffi.Int32()
+  external int tag;
+
+  external ffi.Pointer<IncomingMessageKind> kind;
 }
 
 typedef DartPostCObjectFnType = ffi.Pointer<
