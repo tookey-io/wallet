@@ -1,0 +1,3 @@
+[submodule "vendor/gmp"]
+	path = vendor/gmp
+	url = https://github.com/Rupan/gmp.git

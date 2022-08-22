@@ -18,58 +18,6 @@ use flutter_rust_bridge::*;
 // Section: wire functions
 
 #[no_mangle]
-pub extern "C" fn wire_to_ethereum_address(port_: i64, key: *mut wire_uint_8_list) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
-        WrapInfo {
-            debug_name: "to_ethereum_address",
-            port: Some(port_),
-            mode: FfiCallMode::Normal,
-        },
-        move || {
-            let api_key = key.wire2api();
-            move |task_callback| to_ethereum_address(api_key)
-        },
-    )
-}
-
-#[no_mangle]
-pub extern "C" fn wire_message_to_hash(port_: i64, message: *mut wire_uint_8_list) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
-        WrapInfo {
-            debug_name: "message_to_hash",
-            port: Some(port_),
-            mode: FfiCallMode::Normal,
-        },
-        move || {
-            let api_message = message.wire2api();
-            move |task_callback| message_to_hash(api_message)
-        },
-    )
-}
-
-#[no_mangle]
-pub extern "C" fn wire_to_ethereum_signature(
-    port_: i64,
-    message: *mut wire_uint_8_list,
-    signature: *mut wire_uint_8_list,
-    chain: u32,
-) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
-        WrapInfo {
-            debug_name: "to_ethereum_signature",
-            port: Some(port_),
-            mode: FfiCallMode::Normal,
-        },
-        move || {
-            let api_message = message.wire2api();
-            let api_signature = signature.wire2api();
-            let api_chain = chain.wire2api();
-            move |task_callback| to_ethereum_signature(api_message, api_signature, api_chain)
-        },
-    )
-}
-
-#[no_mangle]
 pub extern "C" fn wire_connect_logger(port_: i64) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {
@@ -246,6 +194,7 @@ pub struct wire_TookeyScenarios_KeygenECDSA {
 #[repr(C)]
 #[derive(Clone)]
 pub struct wire_TookeyScenarios_SignECDSA {
+    index: u16,
     parties: *mut wire_uint_16_list,
     key: *mut wire_uint_8_list,
     hash: *mut wire_uint_8_list,
@@ -391,6 +340,7 @@ impl Wire2Api<TookeyScenarios> for wire_TookeyScenarios {
                 let ans = support::box_from_leak_ptr(self.kind);
                 let ans = support::box_from_leak_ptr(ans.SignECDSA);
                 TookeyScenarios::SignECDSA {
+                    index: ans.index.wire2api(),
                     parties: ans.parties.wire2api(),
                     key: ans.key.wire2api(),
                     hash: ans.hash.wire2api(),
@@ -520,6 +470,7 @@ pub extern "C" fn inflate_TookeyScenarios_KeygenECDSA() -> *mut TookeyScenariosK
 pub extern "C" fn inflate_TookeyScenarios_SignECDSA() -> *mut TookeyScenariosKind {
     support::new_leak_box_ptr(TookeyScenariosKind {
         SignECDSA: support::new_leak_box_ptr(wire_TookeyScenarios_SignECDSA {
+            index: Default::default(),
             parties: core::ptr::null_mut(),
             key: core::ptr::null_mut(),
             hash: core::ptr::null_mut(),

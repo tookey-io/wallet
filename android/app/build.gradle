@@ -27,7 +27,7 @@ apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
 
 android {
     compileSdkVersion flutter.compileSdkVersion
-    ndkVersion flutter.ndkVersion
+    ndkVersion '22.1.7171670'
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -47,7 +47,7 @@ android {
         applicationId "com.example.flutter_rust_bridge_template"
         // You can update the following values to match your application needs.
         // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-build-configuration.
-        minSdkVersion flutter.minSdkVersion
+        minSdkVersion 20
         targetSdkVersion flutter.targetSdkVersion
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
@@ -60,6 +60,15 @@ android {
             signingConfig signingConfigs.debug
         }
     }
+
+    // externalNativeBuild {
+    //     // Encapsulates your CMake build configurations.
+    //     cmake {
+    //         version "3.18.1"
+    //         // Provides a relative path to your CMake build script.
+    //         path "../CMakeLists.txt"
+    //     }
+    // }
 }
 
 flutter {
@@ -80,22 +89,25 @@ dependencies {
     tasks.whenTaskAdded { task ->
         if (task.name == "javaPreCompile$taskPostfix") {
             task.dependsOn "cargoBuild$taskPostfix"
+            task.dependsOn "vendorCopy$taskPostfix"
         }
+    }
+    tasks.register("vendorCopy$taskPostfix", Exec) {
+        // commandLine 'zsh', '-c', """cd ../../android/app/src/main/jniLibs && \
+        //     cp ../../../../../vendor/gmp/arm64-v8a/*.so arm64-v8a && \
+        //     cp ../../../../../vendor/gmp/armeabi-v7a/*.so armeabi-v7a && \
+        //     cp ../../../../../vendor/gmp/x86/*.so x86 && \
+        //     cp ../../../../../vendor/gmp/x86_64/*.so x86_64"""
+        commandLine 'echo', 'hello'
     }
     tasks.register("cargoBuild$taskPostfix", Exec) {
         commandLine 'zsh', '-c', """cd ../../native && \
-            ARMV7_LINUX_ANDROIDEABI_OPENSSL_LIB_DIR=/Users/aler/crypto/tookey/vendor/openssl-android-armeabi-v7a/lib \
-            ARMV7_LINUX_ANDROIDEABI_OPENSSL_INCLUDE_DIR=/Users/aler/crypto/tookey/vendor/openssl-android-armeabi-v7a/include \
-            AARCH64_LINUX_ANDROID_OPENSSL_LIB_DIR=/Users/aler/crypto/tookey/vendor/openssl-android-arm64-v8a/lib \
-            AARCH64_LINUX_ANDROID_OPENSSL_INCLUDE_DIR=/Users/aler/crypto/tookey/vendor/openssl-android-arm64-v8a/include \
-            I686_LINUX_ANDROID_OPENSSL_LIB_DIR=/Users/aler/crypto/tookey/vendor/openssl-android-x86/lib \
-            I686_LINUX_ANDROID_OPENSSL_INCLUDE_DIR=/Users/aler/crypto/tookey/vendor/openssl-android-x86/include \
-            X86_64_LINUX_ANDROID_OPENSSL_LIB_DIR=/Users/aler/crypto/tookey/vendor/openssl-android-x86_64/lib \
-            X86_64_LINUX_ANDROID_OPENSSL_INCLUDE_DIR=/Users/aler/crypto/tookey/vendor/openssl-android-x86_64/include \
             cargo ndk \
             -t arm64-v8a \
-            -o ../android/app/src/main/jniLibs build $profileMode"""
+            -o ../android/app/src/main/jniLibs \
+            build $profileMode \
+            --features ecdsa,bigint \
+            """
     }
     // -t armeabi-v7a -t arm64-v8a -t x86 -t x86_64 \
 }
-

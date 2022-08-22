@@ -49,3 +49,7 @@ jniLibs
 
 Cargo.lock
 pubspec.lock
+
+.cxx
+
+*keystore.json

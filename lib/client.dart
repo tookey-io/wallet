@@ -27,9 +27,10 @@ class UniqueIdx {
 }
 
 class RoomClient {
+  late Stream<String> messages;
   late String _baseUri;
   final String _room;
-  int _id = -1;
+  int id = -1;
 
   RoomClient._internal(String managerEndpoint, this._room) {
     _baseUri = path.join(managerEndpoint, "rooms", _room);
@@ -37,6 +38,7 @@ class RoomClient {
 
   static Future<RoomClient> connect(String managerEndpoint, String room) async {
     var client = RoomClient._internal(managerEndpoint, room);
+    await client.subscribe();
     await client.issueIndex();
     return client;
   }
@@ -50,19 +52,24 @@ class RoomClient {
 
     log("Response is $response");
     if (response.statusCode == 200) {
-      _id = UniqueIdx.fromJson(jsonDecode(response.body)).id;
+      id = UniqueIdx.fromJson(jsonDecode(response.body)).id;
     } else {
       throw ClientException(
           'Request failed with status: ${response.statusCode}. (${response.body})');
     }
   }
 
-  Stream<String>? subscribe() {
+  Future<void> subscribe() async {
     var uri = Uri.parse(path.join(_baseUri, "subscribe"));
     log("Connect to ${uri.toString()}");
     var client = SseClient.connect(uri);
 
-    return client.stream?.map((event) => event.toString());
+    if (client.stream == null) throw "Cannot find SSE stream";
+
+    messages = client.stream!.map((event) => event.toString());
+
+    // TODO: Rewrite SseClient to allow wait for response
+    await Future.delayed(const Duration(milliseconds: 500));
   }
 
   Future<String> broadcast(String msg) async {

@@ -1,5 +1,5 @@
-import 'dart:math';
-
+import 'dart:developer';
+import 'dart:math' as math;
 import 'ffi.dart';
 
 class ExecutorException implements Exception {
@@ -18,7 +18,7 @@ class ExecutorIsNotInitialized extends ExecutorException {
 class ExecutionMessage {
   final int sender;
   final int? receiver;
-  final dynamic body;
+  final Map<String, dynamic> body;
 
   ExecutionMessage(this.sender, this.receiver, this.body);
 
@@ -41,15 +41,14 @@ class Executor {
   Executor(this.id, this.messages);
 
   static Future<Executor> create() async {
-    // TODO:
-    // int id = await api.getNextId();
-    var id = Random().nextInt(999);
-    var messages = api.createOutgoingStream(id: id);
+    int id = await api.getNextId();
+    var messages = api.initialize(id: id);
     return Executor(id, messages);
   }
 
   Future<void> send(IncomingMessage msg) {
-    return api.sendIncoming(id: id, value: msg);
+    log("[$id]: Send incoming message: ${msg.runtimeType.toString()}");
+    return api.receive(id: id, value: msg);
   }
 
   Future<OutgoingMessage> pool() {

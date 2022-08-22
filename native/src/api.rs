@@ -1,141 +1,334 @@
-use std::sync::Mutex;
-use std::{collections::HashMap, time::Duration};
+use std::collections::HashMap;
+use std::fmt::{Display, Formatter};
+use std::pin::Pin;
+use std::sync::atomic::AtomicU32;
+use std::sync::{Mutex, RwLock};
+use std::time::Duration;
 
-use crate::ecdsa::signer::{sign_offline, sign_online};
+use crate::global;
+use crate::logger::{initialize_logger, log};
 use anyhow::{anyhow, Context, Error, Result};
+use curv::arithmetic::Converter;
 use curv::elliptic::curves::Secp256k1;
+use curv::BigInt;
 use flutter_rust_bridge::{support, StreamSink};
-use futures::{channel::mpsc::Sender, StreamExt};
+use futures::channel::mpsc::Sender;
+use futures::channel::mpsc::{channel, Receiver};
+use futures::{Future, FutureExt, StreamExt, TryFutureExt, TryStreamExt};
 use round_based::Msg;
-use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
+use tokio::runtime::Runtime;
 use tss::ecdsa::state_machine::keygen::LocalKey;
+use tss::ecdsa::state_machine::sign::{OfflineProtocolMessage, PartialSignature};
+use tss_ceremonies::ecdsa;
 
-support::lazy_static! {
-    static ref OUTGOING: Mutex<HashMap<u32, StreamSink<OutgoingMessage>>> = Mutex::new(HashMap::new());
-    static ref INCOMING: Mutex<HashMap<u32, Sender<IncomingMessage>>> = Mutex::new(HashMap::new());
-    static ref RUNTIME: Mutex<tokio::runtime::Runtime> = Mutex::new(tokio::runtime::Runtime::new().unwrap());
+#[repr(C)]
+#[derive(Debug, Serialize, Deserialize)]
+pub enum ErrCode {
+    Internal = 500,
+    InvalidMessage = 502,
+    Critical = 100,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum OutgoingMessage {
-    Msg(String),
-    Multiply(u32),
+    Start,
+    Ready,
+    Issue { code: ErrCode, message: String },
+    Communication { packet: String },
+    Result { encoded: String },
     Close,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum IncomingMessage {
-    Msg(String),
-    Multiply(u32),
+    Begin {
+        scenario: TookeyScenarios,
+    },
+    Participant {
+        index: u16,
+        party: Option<u16>,
+    },
+    Group {
+        indexes: Vec<u16>,
+        parties: Vec<u16>,
+    },
+    Communication {
+        packet: String,
+    },
     Close,
 }
 
-/// Creates channel to obtain outgoing messages for broadcast/send them
-pub fn create_outgoing_stream(outgoing: StreamSink<OutgoingMessage>, id: u32) -> Result<()> {
-    let mut map = OUTGOING.lock().unwrap();
+#[derive(Debug, Serialize, Deserialize)]
+pub enum TookeyScenarios {
+    KeygenECDSA {
+        index: u16,
+        parties: u16,
+        threashold: u16,
+    },
+    SignECDSA {
+        parties: Vec<u16>,
+        key: String,
+        hash: String,
+    },
+}
 
-    if map.contains_key(&id) {
-        return Err(anyhow!("Already exist id!"));
+impl Display for ErrCode {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                ErrCode::Internal => "Internal",
+                ErrCode::InvalidMessage => "InvalidMessage",
+                ErrCode::Critical => "Critical",
+            }
+        )
     }
-    map.insert(id, outgoing);
+}
+impl OutgoingMessage {
+    pub fn critical(message: String) -> OutgoingMessage {
+        OutgoingMessage::Issue {
+            code: ErrCode::Critical,
+            message,
+        }
+    }
+
+    pub fn invalid(message: String) -> OutgoingMessage {
+        OutgoingMessage::Issue {
+            code: ErrCode::InvalidMessage,
+            message,
+        }
+    }
+}
+impl Display for TookeyScenarios {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                TookeyScenarios::KeygenECDSA {
+                    index: _,
+                    parties: _,
+                    threashold: _,
+                } => "KeygenECDSA",
+                TookeyScenarios::SignECDSA {
+                    parties: _,
+                    key: _,
+                    hash: _,
+                } => "SignECDSA",
+            }
+        )
+    }
+}
+impl Display for OutgoingMessage {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                OutgoingMessage::Start => format!("Start"),
+                OutgoingMessage::Ready => format!("Ready"),
+                OutgoingMessage::Issue { code, message } => format!("Issue({}, {})", code, message),
+                OutgoingMessage::Communication { packet: _ } => format!("Communication"),
+                OutgoingMessage::Result { encoded: _ } => format!("Result"),
+                OutgoingMessage::Close => format!("Close"),
+            }
+        )
+    }
+}
+
+impl Display for IncomingMessage {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                IncomingMessage::Begin { scenario } => {
+                    format!("Incoming(Begin({}))", scenario)
+                }
+                IncomingMessage::Participant { index, party } => {
+                    format!("Incoming(Participant {} {:?})", index, party)
+                }
+                IncomingMessage::Group { indexes, parties } => format!(
+                    "Incoming(Group(size: {}, parties: {:?}))",
+                    indexes.len(),
+                    parties
+                ),
+                IncomingMessage::Communication { packet: _ } =>
+                    "Incoming(Communication)".to_owned(),
+                IncomingMessage::Close => "Close".to_owned(),
+            }
+        )
+    }
+}
+
+pub fn to_ethereum_address(key: String) -> Result<String> {
+    let local_share: LocalKey<Secp256k1> =
+        serde_json::from_str(key.as_str()).context("key deserialization")?;
+    let pk = local_share.y_sum_s;
+
+    Ok(tookey_adapter_ethereum::to_address_checksum(pk))
+}
+
+pub fn message_to_hash(message: String) -> Result<String> {
+    if !message.starts_with("0x") {
+        return Err(anyhow!(
+            "Incorrect token address (address must starts with 0x)"
+        ));
+    }
+
+    let bytes = hex::decode(&message.as_str()[2..]).context("decode hex string")?;
+    Ok(format!(
+        "{:#x}",
+        tookey_adapter_ethereum::message_hash(bytes)
+    ))
+}
+
+pub fn to_ethereum_signature(message: String, signature: String, chain: u32) -> Result<String> {
+    let hash = tookey_adapter_ethereum::message_hash(message.as_bytes());
+    let mut signature: tookey_adapter_ethereum::SignatureRecid =
+        serde_json::from_str(signature.as_str()).context("signature deserialization")?;
+
+    let signature = tookey_adapter_ethereum::to_ethereum_signature(hash, &mut signature, chain)?;
+    Ok(format!("{:#x}", signature))
+}
+
+async fn execute_sign(
+    id: u32,
+    receiver: &mut Receiver<IncomingMessage>,
+    parties: Vec<u16>,
+    key: String,
+    hash: String,
+) -> Result<String> {
+    let incoming = receiver.filter_map(|msg| async move {
+        match msg {
+            // IncomingMessage::Begin { scenario } => todo!(),
+            // IncomingMessage::Participant { index, party } => todo!(),
+            // IncomingMessage::Group { indexes, parties } => todo!(),
+            IncomingMessage::Communication { packet } => {
+                let possible_offline =
+                    serde_json::from_str::<Msg<OfflineProtocolMessage>>(packet.as_str());
+                let possible_partial =
+                    serde_json::from_str::<Msg<PartialSignature>>(packet.as_str());
+
+                match (possible_offline, possible_partial) {
+                    (Ok(offline), _) => {
+                        log(format!("[{}] received offline {:?}", id, offline)).unwrap();
+                        Some(Ok(ecdsa::Messages::OfflineStage(offline)))
+                    }
+                    (_, Ok(partial)) => {
+                        log(format!("[{}] received partial {:?}", id, partial)).unwrap();
+                        Some(Ok(ecdsa::Messages::PartialSignature(partial)))
+                    }
+                    _ => Some(Err(anyhow!("Invalid incoming.. not ecdsa message"))),
+                }
+            }
+            IncomingMessage::Close => None,
+            _ => {
+                log(format!("[{}] received unexped msg {}", id, msg)).unwrap();
+                None
+            }
+        }
+    });
+
+    let outgoing_sender = futures::sink::unfold(0, |_, msg| async move {
+        let packet = match msg {
+            ecdsa::Messages::OfflineStage(msg) => serde_json::to_string(&msg),
+            ecdsa::Messages::PartialSignature(msg) => serde_json::to_string(&msg),
+        }
+        .context("packet serialization")?;
+        global::send_outgoin(id, OutgoingMessage::Communication { packet })?;
+        Ok::<_, anyhow::Error>(0)
+    });
+
+    let local_share = serde_json::from_str(key.as_str())?;
+
+    let hash = tookey_adapter_ethereum::hash_to_bytes(hash)?;
+
+    ecdsa::sign(
+        outgoing_sender,
+        incoming,
+        local_share,
+        parties,
+        BigInt::from_bytes(hash.as_bytes()),
+    )
+    .map_err(|e| anyhow!("failed signature ceremony: {}", e))
+    .await
+    .and_then(|sig| serde_json::to_string(&sig).context("signature serialization"))
+}
+
+async fn execution_loop(id: u32, mut receiver: Receiver<IncomingMessage>) -> Result<String> {
+    global::send_outgoin(id, OutgoingMessage::Ready)?;
+
+    let mut step = 0;
+    loop {
+        step += 1;
+        log(format!("[{}] Loop step {}", id, step))?;
+
+        match receiver.next().await {
+            Some(IncomingMessage::Begin { scenario }) => match scenario {
+                TookeyScenarios::KeygenECDSA {
+                    index: _,
+                    parties: _,
+                    threashold: _,
+                } => todo!(),
+                TookeyScenarios::SignECDSA { key, parties, hash } => {
+                    log(format!("[{}] Begin ecdsa sign of {}", id, hash))?;
+                    return execute_sign(id, &mut receiver, parties, key, hash).await;
+                }
+            },
+            Some(IncomingMessage::Close) => Err(anyhow!("external close"))?,
+            None => Err(anyhow!("execution receiver is closed"))?,
+            _ => log(format!("[{}] Unexpected incoming message", id))?,
+        }
+    }
+}
+
+pub fn connect_logger(logs: StreamSink<String>) -> Result<()> {
+    initialize_logger(logs)?;
+    log(format!("Logger is initialized"))?;
     Ok(())
 }
 
-pub fn close_outgoin_stream(id: u32) {
-    let _ = INCOMING
-        .lock()
-        .unwrap()
-        .get_mut(&id)
-        .unwrap()
-        .try_send(IncomingMessage::Close);
-    let _ = OUTGOING.lock().unwrap().remove(&id);
+/// Returns next available id for initialize execution
+pub fn get_next_id() -> Result<u32> {
+    global::get_id()
 }
 
-pub fn sign(id: u32, key: String, parties: Vec<u16>, index: u16) -> Result<()> {
-    let runtime = RUNTIME.lock().unwrap();
+/// Creates channel to obtain outgoing messages for broadcast/send them
+pub fn initialize(outgoing: StreamSink<OutgoingMessage>, id: u32) -> Result<()> {
+    global::store_outgoin(id, outgoing)?;
+    global::send_outgoin(id, OutgoingMessage::Start)?;
 
-    let key: LocalKey<Secp256k1> = serde_json::from_str(key.as_str()).unwrap();
+    let receiver = global::create_incoming(id)?;
 
-    let stage = runtime.block_on(async move {
-        let mut map = OUTGOING.lock().map_err(|e| anyhow!("failed"))?;
-        let outgoing = map.get_mut(&id).ok_or(anyhow!("Stream not found"))?;
-
-        let (sender, mut receiver) = futures::channel::mpsc::channel(102400);
-        {
-            INCOMING.lock().unwrap().insert(id, sender);
-        };
-
-        let stage = sign_offline(outgoing, &mut receiver, index, key, parties)
-            .await
-            .context("stage failed")?;
-
-        Ok::<_, Error>(stage)
-    })?;
-
-    Ok::<(), Error>(())
-}
-
-pub fn multiply_incoming(id: u32) -> Result<u32> {
-    let runtime = RUNTIME.lock().unwrap();
-
-    Ok(runtime.block_on(async {
-        let (sender, mut receiver) = futures::channel::mpsc::channel(102400);
-        // Store channel
-        {
-            INCOMING.lock().unwrap().insert(id, sender);
-        }
-
-        let mut result = 0u32;
-
-        loop {
-            if let Some(incoming) = receiver.next().await {
-                match incoming {
-                    IncomingMessage::Multiply(value) => {
-                        tokio::time::sleep(Duration::from_millis(500)).await;
-                        OUTGOING
-                            .lock()
-                            .unwrap()
-                            .get(&id)
-                            .unwrap()
-                            .add(OutgoingMessage::Multiply(value * 2));
-                        result = value * 2;
-
-                        if result > 10 {
-                            OUTGOING
-                                .lock()
-                                .unwrap()
-                                .get(&id)
-                                .unwrap()
-                                .add(OutgoingMessage::Close);
-                            break;
-                        }
-                    }
-                    IncomingMessage::Close => {
-                        OUTGOING
-                            .lock()
-                            .unwrap()
-                            .get(&id)
-                            .unwrap()
-                            .add(OutgoingMessage::Close);
-                        break;
-                    }
-                    _ => {}
+    {
+        global::runtime()?.spawn(async move {
+            // execute
+            match execution_loop(id, receiver).await {
+                Ok(encoded) => {
+                    global::send_outgoin(id, OutgoingMessage::Result { encoded }).unwrap()
                 }
+                Err(e) => global::send_outgoin(
+                    id,
+                    OutgoingMessage::critical(format!("Execution failed: {:?}", e)),
+                )
+                .unwrap(),
             }
+        });
+    }
 
-            tokio::time::sleep(Duration::from_millis(100)).await;
-        }
-
-        result
-    }))
+    Ok(())
 }
 
-pub fn send_incoming(id: u32, value: IncomingMessage) -> Result<()> {
-    Ok(INCOMING
-        .lock()
-        .unwrap()
+pub fn receive(id: u32, value: IncomingMessage) -> Result<()> {
+    global::get_incomings()?
         .get_mut(&id)
-        .context("channel not found")?
-        .try_send(value)?)
+        .ok_or(anyhow!("failed getting incoming stream"))?
+        .try_send(value)
+        .map_err(|e| {
+            drop(e);
+            anyhow!("Failed send")
+        })
 }

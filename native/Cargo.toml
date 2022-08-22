@@ -5,6 +5,12 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+default = [ "bigint", "ecdsa" ]
+ecdsa = [ "tss_ceremonies/ecdsa" ]
+gmp = [ "curv-kzen/rust-gmp-kzen", "tss/gmp", "tss_ceremonies/gmp", "tookey_adapter_ethereum/gmp" ]
+bigint = ["curv-kzen/num-bigint", "tss/bigint", "tss_ceremonies/bigint", "tookey_adapter_ethereum/bigint" ]
+
 [lib]
 crate-type = ["cdylib", "staticlib"]
 
@@ -16,6 +22,8 @@ flutter_rust_bridge = "1"
 round-based = { version = "0.1.4", features = ["dev"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-surf = "2"
 tokio = { version = "1", default-features = false, features = ["rt", "rt-multi-thread", "macros"] }
-tss = { path = "../../monorep/tss" }
+tookey_adapter_ethereum = { path = "../../monorep/adapters/ethereum", default-features = false  }
+tss = { path = "../../monorep/tss", default-features = false  }
+tss_ceremonies = { path = "../../monorep/ceremonies", default-features = false  }
+hex = "0.4.3"
