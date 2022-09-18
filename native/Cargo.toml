@@ -23,7 +23,7 @@ round-based = { version = "0.1.4", features = ["dev"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 tokio = { version = "1", default-features = false, features = ["rt", "rt-multi-thread", "macros"] }
-tookey_adapter_ethereum = { path = "../../monorep/adapters/ethereum", default-features = false  }
-tss = { path = "../../monorep/tss", default-features = false  }
-tss_ceremonies = { path = "../../monorep/ceremonies", default-features = false  }
+tookey_adapter_ethereum = { git = "https://github.com/tookey-io/monorep", rev = "f1ab0859d25e513cee872b9592628776c0631a6d", package = "tookey_adapter_ethereum", default-features = false  }
+tss = { git = "https://github.com/tookey-io/monorep", rev = "f1ab0859d25e513cee872b9592628776c0631a6d", package = "tss", default-features = false  }
+tss_ceremonies = {  git = "https://github.com/tookey-io/monorep", rev = "f1ab0859d25e513cee872b9592628776c0631a6d", package = "tss_ceremonies", default-features = false  }
 hex = "0.4.3"
