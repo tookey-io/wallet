@@ -8,6 +8,7 @@ import 'package:flutter_rust_bridge_template/state.dart';
 import 'package:provider/provider.dart';
 import 'ffi.dart';
 import 'pages/key_list.dart';
+import 'pages/qr_scanner.dart';
 import 'sign.dart';
 import 'dart:io' as io;
 
@@ -49,7 +50,7 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
       ),
       // home: const KeysListPage(title: 'Keys'),
-      home: WalletConnect(),
+      home: QRScanner(),
     );
   }
 }

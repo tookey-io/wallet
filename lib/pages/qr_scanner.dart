@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:qr_code_scanner/qr_code_scanner.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 
 class QRScanner extends StatefulWidget {
   @override
@@ -12,20 +12,11 @@ class QRScanner extends StatefulWidget {
 class _QRScannerState extends State<QRScanner> {
   final GlobalKey qrKey = GlobalKey(debugLabel: 'QR');
   Barcode? result;
-  QRViewController? controller;
-
-  void _onQRViewCreated(QRViewController controller) {
-    this.controller = controller;
-    controller.scannedDataStream.listen((scanData) {
-      setState(() {
-        result = scanData;
-      });
-    });
-  }
+  MobileScannerController controller = MobileScannerController();
 
   @override
   void dispose() {
-    controller?.dispose();
+    controller.dispose();
     super.dispose();
   }
 
@@ -34,11 +25,6 @@ class _QRScannerState extends State<QRScanner> {
   @override
   void reassemble() {
     super.reassemble();
-    if (Platform.isAndroid) {
-      controller!.pauseCamera();
-    } else if (Platform.isIOS) {
-      controller!.resumeCamera();
-    }
   }
 
   @override
@@ -53,10 +39,22 @@ class _QRScannerState extends State<QRScanner> {
             ),
         body: Stack(
           children: [
-            QRView(
-              key: qrKey,
-              onQRViewCreated: _onQRViewCreated,
-            ),
+            MobileScanner(controller: controller, onDetect: (barcode, args) {
+              setState(() {
+                result = barcode;
+              });
+
+              if (barcode.rawValue == null) {
+                debugPrint('Failed to scan Barcode');
+              } else {
+                final String code = barcode.rawValue!;
+                debugPrint('Barcode found! $code');
+              }
+            }),
+            // QRView(
+            //   key: qrKey,
+            //   onQRViewCreated: _onQRViewCreated,
+            // ),
             Positioned(
               bottom: 0,
               left: 0,
@@ -66,11 +64,11 @@ class _QRScannerState extends State<QRScanner> {
                   child: Center(
                     child: (result != null)
                         ? Text(
-                            'Barcode Type: ${describeEnum(result!.format)}   Data: ${result!.code}')
+                            'Barcode Type: ${describeEnum(result!.format)}   Data: ${result!.rawValue}')
                         : FloatingActionButton(
                             backgroundColor: Colors.white,
                             onPressed: () async {
-                              await controller?.flipCamera();
+                              await controller.switchCamera();
                             },
                             child: const Icon(Icons.flip_camera_android, color: Colors.blue,),
                           ),
@@ -99,26 +97,4 @@ class AppBarAction extends StatelessWidget {
           child: _child,
         ));
   }
-}
-
-class NewWidget extends StatelessWidget implements PreferredSizeWidget {
-  const NewWidget({
-    Key? key,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-        child: Row(
-      children: [
-        Spacer(),
-        FloatingActionButton(
-            onPressed: () {}, child: Icon(Icons.close_fullscreen))
-      ],
-    ));
-  }
-
-  @override
-  // TODO: implement preferredSize
-  Size get preferredSize => Size(100, 100);
 }
