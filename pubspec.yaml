@@ -49,6 +49,7 @@ dependencies:
   wallet_connect: ^1.0.2
   web3dart: ^2.3.5
   mobile_scanner: ^2.0.0
+  local_auth: ^2.1.2
 
 dev_dependencies:
   flutter_test:

@@ -49,8 +49,8 @@ class MyApp extends StatelessWidget {
         // is not restarted.
         primarySwatch: Colors.blue,
       ),
-      // home: const KeysListPage(title: 'Keys'),
-      home: QRScanner(),
+      home: const KeysListPage(title: 'Keys'),
+      // home: QRScanner(),
     );
   }
 }

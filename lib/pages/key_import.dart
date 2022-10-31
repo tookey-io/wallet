@@ -142,10 +142,7 @@ class _KeyImportPageData extends State<KeyImportPage> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      scaffoldMessengerKey: _scaffoldMessengerKey,
-      home: Scaffold(
-        key: _scaffoldKey,
+    return Scaffold(
         appBar: AppBar(
           title: const Text('File Picker example app'),
         ),
@@ -301,7 +298,6 @@ class _KeyImportPageData extends State<KeyImportPage> {
             ),
           ),
         ),
-      ),
     );
   }
 }
