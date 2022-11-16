@@ -5,6 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 class QRScanner extends StatefulWidget {
+  final Function(String) onData;
+  final VoidCallback? onCancel;
+  QRScanner({ required this.onData, this.onCancel, Key? key}) : super(key: key);
+
   @override
   State<StatefulWidget> createState() => _QRScannerState();
 }
@@ -29,15 +33,7 @@ class _QRScannerState extends State<QRScanner> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-        appBar: AppBar(
-            // backgroundColor: Colors.transparent,
-            // shadowColor: Colors.transparent,
-            // actions: [
-            // AppBarAction(child: const Icon(Icons.close), onTap: () {}),
-            // ],
-            ),
-        body: Stack(
+    return Stack(
           children: [
             MobileScanner(controller: controller, onDetect: (barcode, args) {
               setState(() {
@@ -48,7 +44,7 @@ class _QRScannerState extends State<QRScanner> {
                 debugPrint('Failed to scan Barcode');
               } else {
                 final String code = barcode.rawValue!;
-                debugPrint('Barcode found! $code');
+                widget.onData(code);
               }
             }),
             // QRView(
@@ -75,26 +71,6 @@ class _QRScannerState extends State<QRScanner> {
                   )),
             )
           ],
-        ));
-  }
-}
-
-class AppBarAction extends StatelessWidget {
-  final Widget _child;
-  final Function()? _onTap;
-
-  const AppBarAction({Key? key, required Widget child, void Function()? onTap})
-      : _child = child,
-        _onTap = onTap,
-        super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-        padding: const EdgeInsets.only(right: 20.0),
-        child: GestureDetector(
-          onTap: _onTap,
-          child: _child,
-        ));
+        );
   }
 }

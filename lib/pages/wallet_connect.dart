@@ -415,7 +415,7 @@ class _WalletConnectState extends State<WalletConnect> {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => QRScanner()),
+            MaterialPageRoute(builder: (context) => QRScanner(onData: (raw) { log(raw); },)),
           );
         },
       ),

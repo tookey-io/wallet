@@ -26,6 +26,12 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  removeAccessToken() {
+    _accessToken = null;
+    _storage.write(key: _tokenKey(), value: _accessToken);
+    notifyListeners();
+  }
+
   loadAccessToken() async {
     _accessToken = await _storage.read(key: _tokenKey());
     notifyListeners();

@@ -15,10 +15,10 @@ use flutter_rust_bridge::{support, StreamSink};
 use futures::channel::mpsc::Sender;
 use futures::channel::mpsc::{channel, Receiver};
 use futures::{Future, FutureExt, StreamExt, TryFutureExt, TryStreamExt};
-use round_based::Msg;
+use round_based::{AsyncProtocol, Msg};
 use serde::{Deserialize, Serialize};
 use tokio::runtime::Runtime;
-use tss::ecdsa::state_machine::keygen::LocalKey;
+use tss::ecdsa::state_machine::keygen::{Keygen, LocalKey, ProtocolMessage};
 use tss::ecdsa::state_machine::sign::{OfflineProtocolMessage, PartialSignature};
 use tss_ceremonies::ecdsa;
 
@@ -194,9 +194,54 @@ pub fn to_ethereum_signature(message: String, signature: String, chain: u32) -> 
     Ok(format!("{:#x}", signature))
 }
 
+async fn execute_keygen(
+    id: u32,
+    receiver: Receiver<IncomingMessage>,
+    index: u16,
+    participants: u16,
+    threshold: u16,
+) -> Result<String> {
+    let incoming = receiver.filter_map(|msg| async move {
+        match msg {
+            IncomingMessage::Communication { packet } => {
+                match serde_json::from_str::<Msg<ProtocolMessage>>(packet.as_str()) {
+                    Ok(message) => Some(Ok(message)),
+                    _ => Some(Err(anyhow!("Invalid incoming..."))),
+                }
+            }
+
+            IncomingMessage::Close => None,
+            _ => {
+                log(format!("[{}] received unexped msg {}", id, msg)).unwrap();
+                None
+            }
+        }
+    });
+
+    let outgoing = futures::sink::unfold(0, |_, msg| async move {
+        let packet = serde_json::to_string(&msg).context("packet serialization")?;
+        global::send_outgoin(id as u32, OutgoingMessage::Communication { packet })?;
+        Ok::<_, anyhow::Error>(0)
+    });
+
+    let incoming = incoming.fuse();
+    tokio::pin!(incoming);
+    tokio::pin!(outgoing);
+
+    let keygen = Keygen::new(index, threshold, participants)?;
+
+    let mut protocol = AsyncProtocol::new(keygen, incoming, outgoing);
+
+    protocol
+        .run()
+        .map_err(|e| anyhow!("failed keygen ceremony: {}", e))
+        .await
+        .and_then(|sig| serde_json::to_string(&sig).context("signature serialization"))
+}
+
 async fn execute_sign(
     id: u32,
-    receiver: &mut Receiver<IncomingMessage>,
+    receiver: Receiver<IncomingMessage>,
     parties: Vec<u16>,
     key: String,
     hash: String,
@@ -269,13 +314,21 @@ async fn execution_loop(id: u32, mut receiver: Receiver<IncomingMessage>) -> Res
         match receiver.next().await {
             Some(IncomingMessage::Begin { scenario }) => match scenario {
                 TookeyScenarios::KeygenECDSA {
-                    index: _,
-                    parties: _,
-                    threashold: _,
-                } => todo!(),
+                    index,
+                    parties,
+                    threashold,
+                } => {
+                    log(format!(
+                        "[{}] Begin ecdsa keygen of {} of {}",
+                        id,
+                        threashold + 1,
+                        parties
+                    ))?;
+                    return execute_keygen(id, receiver, index, parties, threashold).await;
+                }
                 TookeyScenarios::SignECDSA { key, parties, hash } => {
                     log(format!("[{}] Begin ecdsa sign of {}", id, hash))?;
-                    return execute_sign(id, &mut receiver, parties, key, hash).await;
+                    return execute_sign(id, receiver, parties, key, hash).await;
                 }
             },
             Some(IncomingMessage::Close) => Err(anyhow!("external close"))?,
@@ -301,10 +354,9 @@ pub fn initialize(outgoing: StreamSink<OutgoingMessage>, id: u32) -> Result<()> 
     global::store_outgoin(id, outgoing)?;
     global::send_outgoin(id, OutgoingMessage::Start)?;
 
-    let receiver = global::create_incoming(id)?;
-
     {
-        global::runtime()?.spawn(async move {
+        let receiver = global::create_incoming(id)?;
+        global::runtime().spawn(async move {
             // execute
             match execution_loop(id, receiver).await {
                 Ok(encoded) => {
@@ -331,4 +383,5 @@ pub fn receive(id: u32, value: IncomingMessage) -> Result<()> {
             drop(e);
             anyhow!("Failed send")
         })
+    // .map_err(|e| anyhow!(format!("Failed send {:?}", e)))
 }

@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:developer';
 import 'dart:ffi';
 
@@ -23,7 +24,13 @@ void main() {
   api = NativeImpl(lib);
 
   runApp(ChangeNotifierProvider(
-    create: ((context) => AppState()),
+    create: ((context) {
+      final state = AppState();
+      state.loadAccessToken();
+      state.loadKeys();
+
+      return state;
+    }),
     child: const MyApp(),
   ));
 }
@@ -49,7 +56,22 @@ class MyApp extends StatelessWidget {
         // is not restarted.
         primarySwatch: Colors.blue,
       ),
-      home: const KeysListPage(title: 'Keys'),
+      home: Consumer<AppState>(builder: (context, state, child) {
+        if (state.accessToken == null) {
+          return QRScanner(onData: (raw) {
+            log("Got a data $raw");
+            final pattern = RegExp(r'^tookey:\/\/access\/([0-9a-f]+)$');
+            if (pattern.hasMatch(raw)) {
+              final first = pattern.firstMatch(raw)!.group(1)!;
+              log("Access token is $first");
+              state.setAccessToken(first);
+            }
+            // if (raw)
+          },);
+        } else {
+          return const KeysListPage(title: "Keys");
+        }
+      })//const KeysListPage(title: 'Keys'),
       // home: QRScanner(),
     );
   }

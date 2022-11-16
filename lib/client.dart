@@ -34,6 +34,7 @@ class RoomClient {
 
   RoomClient._internal(String managerEndpoint, this._room) {
     _baseUri = path.join(managerEndpoint, "rooms", _room);
+    log(_baseUri);
   }
 
   static Future<RoomClient> connect(String managerEndpoint, String room) async {
