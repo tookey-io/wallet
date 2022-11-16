@@ -356,7 +356,7 @@ pub fn initialize(outgoing: StreamSink<OutgoingMessage>, id: u32) -> Result<()> 
 
     {
         let receiver = global::create_incoming(id)?;
-        global::runtime().spawn(async move {
+        global::runtime()?.spawn(async move {
             // execute
             match execution_loop(id, receiver).await {
                 Ok(encoded) => {
