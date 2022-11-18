@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
 
@@ -14,86 +15,146 @@ import './qr_scanner.dart';
 
 enum KeyAddMethod { import, generate }
 
-class KeyGenerationAction {
-  Future<String>? _roomId;
-  Future<String>? _adminKey;
-  Future<String>? _shareableKey;
-
-  KeyGenerationAction();
-}
-
 class _KeysListPageState extends State<KeysListPage> {
-  KeyGenerationAction? _keygen;
-
   handleKeyChoice(String id) {
     log("Select key $id");
   }
 
-  Future<String?> _generateKeys(String apiKey) async {
-    log("APIKEY: $apiKey");
-
-    var msg = jsonEncode(<String, dynamic>{
-      "participantsThreshold": 2,
-      "participantsCount": 3,
-      "timeoutSeconds": 60,
-      "name": "Key 1",
-      "description": "Some key",
-      "tags": ["shareable"]
-    });
-
-    log(msg);
-
-    http.post(Uri.parse("http://10.0.2.2:9001/api/keys"),
-        body: msg,
-        headers: <String, String>{
-          "Content-Type": "application/json",
-          "accept": "application/json",
-          "apiKey": apiKey
-        }).then((answer) async {
-      log(answer.body);
-      final json = jsonDecode(answer.body);
-      final room = json["roomId"].toString();
-
-      log(room);
-      final shareableKeygenerator =
-          await Keygenerator.create(2, "http://10.0.2.2:8000", room);
-      final adminKeygenerator =
-          await Keygenerator.create(3, "http://10.0.2.2:8000", room);
-
-      // log(await shareableKeygenerator.keygen());
-      final results = await Future.wait(
-          [shareableKeygenerator.keygen(), adminKeygenerator.keygen()]);
-
-      log(results[0]);
-    });
+  showModal(String title, String text, Color color) {
     showDialog(
         context: context,
-        builder: (_) => SimpleDialog(
+        builder: (ctx) => SimpleDialog(
               contentPadding: const EdgeInsets.all(20),
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    const SizedBox(height: 20),
-                    const CircularProgressIndicator(),
-                    const SizedBox(height: 15),
-                    const Text("Signature progress",
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 18)),
-                    const SizedBox(height: 25),
-                    TextButton(
-                        onPressed: () async {
-                          Navigator.pop(context);
-                        },
-                        style: TextButton.styleFrom(
-                          primary: Colors.white,
-                          backgroundColor: Theme.of(context).colorScheme.error,
-                        ),
-                        child: const Text("Cancel"))
-                  ],
-                )
+                const SizedBox(height: 20),
+                Icon(Icons.check, color: color),
+                const SizedBox(height: 15),
+                Text(title,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 18)),
+                const SizedBox(height: 15),
+                Text(text, style: const TextStyle(fontSize: 14)),
+                const SizedBox(height: 25),
+                TextButton(
+                    onPressed: () async {
+                      Navigator.pop(ctx, null);
+                    },
+                    style: TextButton.styleFrom(
+                      primary: Colors.white,
+                      backgroundColor: color,
+                    ),
+                    child: const Text("Ok"))
               ],
             ));
+  }
+
+  showSuccess(String title, String text) {
+    showModal(title, text, Colors.greenAccent);
+  }
+
+  showError(String title, String text) {
+    showModal(title, text, Colors.redAccent);
+  }
+
+  Future<Keystore?> _generateKeys(AppState state) async {
+    Completer<Keystore> keystore = Completer();
+    BuildContext? modal;
+
+    keystore.future.then((result) {
+      if (modal != null) {
+        Navigator.pop(modal!, result);
+      }
+
+      showSuccess("Key is done", result.publicKey);
+    }).catchError((error) {
+      if (modal != null) {
+        Navigator.pop(modal!, null);
+      }
+
+      showError(
+          "Keygeneration failed", error is String ? error : error.toString());
+    });
+
+    showDialog(
+        context: context,
+        builder: (context) {
+          modal = context;
+          String? name;
+          String? description;
+          bool executing = false;
+
+          _execute() async {
+            if (name != null) {
+              executing = true;
+              keystore.complete(await state.generateKey(name!, description ?? ""));
+            }
+          }
+          
+          return StatefulBuilder(
+              builder: (context, setState) => SimpleDialog(
+                    contentPadding: const EdgeInsets.all(20),
+                    children: [
+                      Column(
+                        crossAxisAlignment: executing
+                            ? CrossAxisAlignment.center
+                            : CrossAxisAlignment.start,
+                        children: executing
+                            ? [
+                                const SizedBox(height: 20),
+                                const CircularProgressIndicator(),
+                                const SizedBox(height: 15),
+                                const Text("Keygeneration progress",
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 18)),
+                                const SizedBox(height: 25),
+                                TextButton(
+                                    onPressed: () async {
+                                      keystore.completeError("cancel");
+                                    },
+                                    style: TextButton.styleFrom(
+                                      primary: Colors.white,
+                                      backgroundColor:
+                                          Theme.of(context).colorScheme.error,
+                                    ),
+                                    child: const Text("Cancel"))
+                              ]
+                            : [
+                                const SizedBox(height: 20),
+                                const Icon(Icons.edit),
+                                const SizedBox(height: 15),
+                                const Text("Create new key",
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 18)),
+                                const SizedBox(height: 15),
+                                TextField(
+                                  onChanged: (value) => name = value,
+                                  decoration:
+                                      const InputDecoration(labelText: "Name:"),
+                                ),
+                                const SizedBox(height: 15),
+                                TextField(
+                                  onChanged: (value) => description = value,
+                                  decoration: const InputDecoration(
+                                      labelText: "Description:"),
+                                ),
+                                const SizedBox(height: 15),
+                                TextButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        log("Name: $name, Desc: $description");
+                                        _execute();
+                                      });
+                                    },
+                                    child: const Text("Create"))
+                              ],
+                      )
+                    ],
+                  ));
+        });
+
+    return await keystore.future;
   }
 
   @override
@@ -109,7 +170,7 @@ class _KeysListPageState extends State<KeysListPage> {
             TextButton(
                 style: style,
                 onPressed: () {
-                  state.removeAccessToken();
+                  state.accessToken = null;
                 },
                 child: const Icon(Icons.logout)),
             PopupMenuButton(
@@ -123,7 +184,7 @@ class _KeysListPageState extends State<KeysListPage> {
                       );
                       break;
                     default:
-                      _generateKeys(state.accessToken!);
+                      _generateKeys(state);
                       break;
                   }
                 },
@@ -148,15 +209,34 @@ class _KeysListPageState extends State<KeysListPage> {
         ),
         body: Consumer<AppState>(builder: (context, state, child) {
           if (state.knownKeys.isNotEmpty) {
-            return ListView(
-                children: state.knownKeys
-                    .map((id) => ListTile(
-                          key: Key(id),
-                          leading: const Icon(Icons.key),
-                          title: Text("Key $id"),
-                          onTap: () => handleKeyChoice(id),
-                        ))
-                    .toList());
+            return ListView(children: [
+              ...state.knownKeys
+                  .map((key) => ListTile(
+                        key: Key(key.publicKey),
+                        leading: const Icon(Icons.key),
+                        // title: Text(key.name),
+                        title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text(key.name),
+                          Text(key.publicKey, style: const TextStyle(fontSize: 8))
+                        ]),
+                        onTap: () {
+                          state.shareableKey = key.publicKey;
+                        },
+                      ))
+                  .toList(),
+              ...state.availableKeys
+                  .where((key) =>
+                      !state.knownKeys.map((k) => k.publicKey).contains(key))
+                  .map((id) => ListTile(
+                        key: Key(id),
+                        leading: const Icon(Icons.key_off),
+                        title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          const Text("Unlinked key"),
+                          Text(id, style: const TextStyle(fontSize: 8))
+                        ]),
+                        onTap: () {},
+                      ))
+            ]);
           } else {
             return Center(
                 child: Column(

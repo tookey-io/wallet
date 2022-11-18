@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
+use std::ops::Deref;
 use std::pin::Pin;
 use std::sync::atomic::AtomicU32;
 use std::sync::{Mutex, RwLock};
@@ -21,6 +22,8 @@ use tokio::runtime::Runtime;
 use tss::ecdsa::state_machine::keygen::{Keygen, LocalKey, ProtocolMessage};
 use tss::ecdsa::state_machine::sign::{OfflineProtocolMessage, PartialSignature};
 use tss_ceremonies::ecdsa;
+
+use hex::ToHex;
 
 #[repr(C)]
 #[derive(Debug, Serialize, Deserialize)]
@@ -163,6 +166,14 @@ impl Display for IncomingMessage {
     }
 }
 
+pub fn to_public_key(key: String, compressed: bool) -> Result<String> {
+    let local_share: LocalKey<Secp256k1> =
+        serde_json::from_str(key.as_str()).context("key deserialization")?;
+    let pk = local_share.public_key();
+
+    Ok(pk.to_bytes(true).deref().encode_hex())
+}
+
 pub fn to_ethereum_address(key: String) -> Result<String> {
     let local_share: LocalKey<Secp256k1> =
         serde_json::from_str(key.as_str()).context("key deserialization")?;
@@ -212,16 +223,16 @@ async fn execute_keygen(
 
             IncomingMessage::Close => None,
             _ => {
-                log(format!("[{}] received unexped msg {}", id, msg)).unwrap();
+                log(format!("received unexped msg {}", msg)).unwrap();
                 None
             }
         }
     });
 
-    let outgoing = futures::sink::unfold(0, |_, msg| async move {
+    let outgoing = futures::sink::unfold(id, |id, msg| async move {
         let packet = serde_json::to_string(&msg).context("packet serialization")?;
-        global::send_outgoin(id as u32, OutgoingMessage::Communication { packet })?;
-        Ok::<_, anyhow::Error>(0)
+        global::send_outgoin(id, OutgoingMessage::Communication { packet })?;
+        Ok::<_, anyhow::Error>(id)
     });
 
     let incoming = incoming.fuse();
@@ -379,9 +390,6 @@ pub fn receive(id: u32, value: IncomingMessage) -> Result<()> {
         .get_mut(&id)
         .ok_or(anyhow!("failed getting incoming stream"))?
         .try_send(value)
-        .map_err(|e| {
-            drop(e);
-            anyhow!("Failed send")
-        })
+        .map_err(|e| anyhow!(format!("Failed send: {:?}", e)))
     // .map_err(|e| anyhow!(format!("Failed send {:?}", e)))
 }

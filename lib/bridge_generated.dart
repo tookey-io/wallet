@@ -15,6 +15,11 @@ import 'dart:ffi' as ffi;
 part 'bridge_generated.freezed.dart';
 
 abstract class Native {
+  Future<String> toPublicKey(
+      {required String key, required bool compressed, dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kToPublicKeyConstMeta;
+
   Future<String> toEthereumAddress({required String key, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kToEthereumAddressConstMeta;
@@ -124,6 +129,23 @@ class NativeImpl extends FlutterRustBridgeBase<NativeWire> implements Native {
       NativeImpl.raw(NativeWire(dylib));
 
   NativeImpl.raw(NativeWire inner) : super(inner);
+
+  Future<String> toPublicKey(
+          {required String key, required bool compressed, dynamic hint}) =>
+      executeNormal(FlutterRustBridgeTask(
+        callFfi: (port_) =>
+            inner.wire_to_public_key(port_, _api2wire_String(key), compressed),
+        parseSuccessData: _wire2api_String,
+        constMeta: kToPublicKeyConstMeta,
+        argValues: [key, compressed],
+        hint: hint,
+      ));
+
+  FlutterRustBridgeTaskConstMeta get kToPublicKeyConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "to_public_key",
+        argNames: ["key", "compressed"],
+      );
 
   Future<String> toEthereumAddress({required String key, dynamic hint}) =>
       executeNormal(FlutterRustBridgeTask(
@@ -280,6 +302,10 @@ class NativeImpl extends FlutterRustBridgeBase<NativeWire> implements Native {
   // Section: api2wire
   ffi.Pointer<wire_uint_8_list> _api2wire_String(String raw) {
     return _api2wire_uint_8_list(utf8.encoder.convert(raw));
+  }
+
+  bool _api2wire_bool(bool raw) {
+    return raw;
   }
 
   ffi.Pointer<wire_IncomingMessage> _api2wire_box_autoadd_incoming_message(
@@ -472,6 +498,25 @@ class NativeWire implements FlutterRustBridgeWireBase {
       ffi.Pointer<T> Function<T extends ffi.NativeType>(String symbolName)
           lookup)
       : _lookup = lookup;
+
+  void wire_to_public_key(
+    int port_,
+    ffi.Pointer<wire_uint_8_list> key,
+    bool compressed,
+  ) {
+    return _wire_to_public_key(
+      port_,
+      key,
+      compressed,
+    );
+  }
+
+  late final _wire_to_public_keyPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Int64, ffi.Pointer<wire_uint_8_list>,
+              ffi.Bool)>>('wire_to_public_key');
+  late final _wire_to_public_key = _wire_to_public_keyPtr
+      .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>, bool)>();
 
   void wire_to_ethereum_address(
     int port_,

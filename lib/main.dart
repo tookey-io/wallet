@@ -23,14 +23,18 @@ void main() {
 
   api = NativeImpl(lib);
 
+  api.connectLogger().listen((event) {
+    log("Rust log: $event");
+  });
+
   runApp(ChangeNotifierProvider(
     create: ((context) {
       final state = AppState();
-      state.loadAccessToken();
-      state.loadKeys();
+      state.initialize();
 
       return state;
     }),
+
     child: const MyApp(),
   ));
 }
@@ -42,37 +46,41 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
-        primarySwatch: Colors.blue,
-      ),
-      home: Consumer<AppState>(builder: (context, state, child) {
-        if (state.accessToken == null) {
-          return QRScanner(onData: (raw) {
-            log("Got a data $raw");
-            final pattern = RegExp(r'^tookey:\/\/access\/([0-9a-f]+)$');
-            if (pattern.hasMatch(raw)) {
-              final first = pattern.firstMatch(raw)!.group(1)!;
-              log("Access token is $first");
-              state.setAccessToken(first);
-            }
-            // if (raw)
-          },);
-        } else {
-          return const KeysListPage(title: "Keys");
-        }
-      })//const KeysListPage(title: 'Keys'),
-      // home: QRScanner(),
-    );
+        debugShowCheckedModeBanner: false,
+        title: 'Flutter Demo',
+        theme: ThemeData(
+          // This is the theme of your application.
+          //
+          // Try running your application with "flutter run". You'll see the
+          // application has a blue toolbar. Then, without quitting the app, try
+          // changing the primarySwatch below to Colors.green and then invoke
+          // "hot reload" (press "r" in the console where you ran "flutter run",
+          // or simply save your changes to "hot reload" in a Flutter IDE).
+          // Notice that the counter didn't reset back to zero; the application
+          // is not restarted.
+          primarySwatch: Colors.blue,
+        ),
+        home: Consumer<AppState>(builder: (context, state, child) {
+          if (state.accessToken == null) {
+            return QRScanner(
+              onData: (raw) {
+                log("Got a data $raw");
+                final pattern = RegExp(r'^tookey:\/\/access\/([0-9a-f]+)$');
+                if (pattern.hasMatch(raw)) {
+                  final first = pattern.firstMatch(raw)!.group(1)!;
+                  log("Access token is $first");
+                  state.accessToken = first;
+                }
+                // if (raw)
+              },
+            );
+          } else if (state.shareableKey == null) {
+            return const KeysListPage(title: "Keys");
+          } else { 
+            return WalletConnect();
+          }
+        }) //const KeysListPage(title: 'Keys'),
+        // home: QRScanner(),
+        );
   }
 }

@@ -56,16 +56,7 @@ class _MyHomePageState extends State<MyHomePage> {
       });
     });
   }
-
-  @override
-  void initState() {
-    api.connectLogger().listen((event) {
-      log("Rust log: $event");
-    });
-
-    super.initState();
-  }
-
+  
   @override
   Widget build(BuildContext context) {
     // This method is rerun every time setState is called.

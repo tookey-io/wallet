@@ -6,11 +6,13 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_rust_bridge_template/pages/qr_scanner.dart';
+import 'package:provider/provider.dart';
 import 'package:wallet_connect/wallet_connect.dart';
 import 'package:web3dart/crypto.dart';
 
 import '../ffi.dart';
 import '../sign.dart';
+import '../state.dart';
 
 class WalletConnect extends StatefulWidget {
   WalletConnect({Key? key}) : super(key: key);
@@ -25,6 +27,8 @@ class _WalletConnectState extends State<WalletConnect> {
   WCSession? _session;
   WCSessionStore? _store;
   Future<AbstractSigner>? signer;
+
+  Future<String>? _secret;
 
   late WCClient? _client;
   final walletMeta = WCPeerMeta(
@@ -59,10 +63,6 @@ class _WalletConnectState extends State<WalletConnect> {
 
   @override
   void initState() {
-    api.connectLogger().listen((event) {
-      log("Rust log: $event");
-    });
-
     _client = WCClient(
       onConnect: _onConnect,
       onDisconnect: _onDisconnect,
@@ -191,7 +191,7 @@ class _WalletConnectState extends State<WalletConnect> {
                         log("Signed Data hex: $signedDataHex");
 
                         _client?.approveRequest(id: id, result: signedDataHex);
-                        
+
                         Navigator.pop(context);
                       }
                     },
@@ -307,10 +307,6 @@ class _WalletConnectState extends State<WalletConnect> {
 
   @override
   void dispose() {
-    api.connectLogger().listen((event) {
-      log("Rust log: $event");
-    });
-
     _disconnect();
     super.dispose();
   }
@@ -335,76 +331,106 @@ class _WalletConnectState extends State<WalletConnect> {
         // AppBarAction(child: const Icon(Icons.close), onTap: () {}),
         // ],
       ),
-      body: Stack(
-        children: [
-          _session == null
-              ? Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: (Column(
-                    children: [
-                      const Spacer(flex: 1),
-                      const Icon(Icons.add_link, size: 48, color: Colors.grey),
-                      const Padding(padding: EdgeInsets.all(10)),
-                      const Text("Wallet connect",
-                          style: TextStyle(
-                              fontSize: 24, fontWeight: FontWeight.bold)),
-                      const Padding(padding: EdgeInsets.all(5)),
-                      const Text(
-                          "Paste connection url below or use QR scanner"),
-                      const Padding(padding: EdgeInsets.all(10)),
-                      Row(
-                        children: [
-                          Flexible(
-                              child: TextField(
-                            decoration: const InputDecoration(
-                                helperText: "Enter connection string"),
-                            style: Theme.of(context).textTheme.bodyText1,
-                            onChanged: (value) => setState(() {
-                              _connectionUrl = value;
-                            }),
-                          )),
-                          const SizedBox(width: 10),
-                          ElevatedButton(
-                              onPressed: () {
-                                _connect();
-                              },
-                              child: Row(children: const [
-                                Icon(Icons.cast_connected),
-                                Text("Connect")
-                              ])),
-                        ],
-                      ),
-                      const Spacer(flex: 2),
-                    ],
-                  )),
-                )
-              : const Center(
-                  child: Text("Interaction by WalletConnect protocol")),
-          _session != null
-              ? Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: Padding(
-                      padding: const EdgeInsets.all(40),
-                      child: Center(
-                        child: FloatingActionButton(
-                          backgroundColor: Colors.white,
-                          onPressed: () async {
-                            _disconnect();
-                          },
-                          child: const Icon(
-                            Icons.exit_to_app,
-                            color: Colors.blue,
-                          ),
-                        ),
-                      )),
-                )
-              : Column(
-                  children: [],
-                )
-        ],
-      ),
+      body: Consumer<AppState>(builder: (context, state, child) {
+        _secret ??= state.readShareableKey().then((possibleSecret) {
+          if (possibleSecret == null) {
+            throw "Cannot load secret";
+          }
+          return possibleSecret;
+        });
+
+        return FutureBuilder(
+            future: _secret,
+            builder: (context, snapshot) {
+              if (snapshot.hasData) {
+                return Stack(
+                  children: [
+                    _session == null
+                        ? Padding(
+                            padding: const EdgeInsets.all(20.0),
+                            child: (Column(
+                              children: [
+                                const Spacer(flex: 1),
+                                const Icon(Icons.add_link,
+                                    size: 48, color: Colors.grey),
+                                const Padding(padding: EdgeInsets.all(10)),
+                                const Text("Wallet connect",
+                                    style: TextStyle(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.bold)),
+                                const Padding(padding: EdgeInsets.all(5)),
+                                const Text(
+                                    "Paste connection url below or use QR scanner"),
+                                const Padding(padding: EdgeInsets.all(10)),
+                                Row(
+                                  children: [
+                                    Flexible(
+                                        child: TextField(
+                                      decoration: const InputDecoration(
+                                          helperText:
+                                              "Enter connection string"),
+                                      style:
+                                          Theme.of(context).textTheme.bodyText1,
+                                      onChanged: (value) => setState(() {
+                                        _connectionUrl = value;
+                                      }),
+                                    )),
+                                    const SizedBox(width: 10),
+                                    ElevatedButton(
+                                        onPressed: () {
+                                          _connect();
+                                        },
+                                        child: Row(children: const [
+                                          Icon(Icons.cast_connected),
+                                          Text("Connect")
+                                        ])),
+                                  ],
+                                ),
+                                const Spacer(flex: 2),
+                              ],
+                            )),
+                          )
+                        : const Center(
+                            child:
+                                Text("Interaction by WalletConnect protocol")),
+                    _session != null
+                        ? Positioned(
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            child: Padding(
+                                padding: const EdgeInsets.all(40),
+                                child: Center(
+                                  child: FloatingActionButton(
+                                    backgroundColor: Colors.white,
+                                    onPressed: () async {
+                                      _disconnect();
+                                    },
+                                    child: const Icon(
+                                      Icons.exit_to_app,
+                                      color: Colors.blue,
+                                    ),
+                                  ),
+                                )),
+                          )
+                        : Column(
+                            children: [],
+                          )
+                  ],
+                );
+              } else {
+                return Center(
+                    // ignore: prefer_const_literals_to_create_immutables
+                    child: Column(children: [
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 20),
+                  const Text("Loading secret",
+                      style:
+                          TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                ]));
+              }
+            });
+      }),
       bottomNavigationBar: BottomAppBar(
         shape: const CircularNotchedRectangle(),
         child: Container(height: 45.0),
@@ -413,10 +439,21 @@ class _WalletConnectState extends State<WalletConnect> {
         tooltip: "Scan QR",
         child: const Icon(Icons.qr_code_scanner),
         onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => QRScanner(onData: (raw) { log(raw); },)),
-          );
+          showDialog(
+              context: context,
+              builder: (context) {
+                return SimpleDialog(
+                    contentPadding: const EdgeInsets.all(20),
+                    children: [
+                      SizedBox.expand(child: QRScanner(onData: (raw) {
+                        Navigator.pop(context, raw);
+                      }))
+                    ]);
+              });
+          // Navigator.push(
+          //   context,
+          //   MaterialPageRoute(builder: (context) => QRScanner(onData: (raw) { log(raw); },)),
+          // );
         },
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
@@ -425,15 +462,6 @@ class _WalletConnectState extends State<WalletConnect> {
 
   Future<String?> _sign(String message, String hash) async {
     Completer<String?> signJoinHandle = Completer();
-    _apiSign() async {
-      final signature = await OfflineSigner.create(
-              await rootBundle.loadString("assets/owner-keystore.json"),
-              await rootBundle.loadString("assets/shareable-keystore.json"))
-          .then((signer) => signer.sign(hash));
-
-      return api.toEthereumSignature(
-          message: message, signature: signature, chain: 137);
-    }
 
     _apiSign().then((signature) {
       signJoinHandle.complete(signature);

@@ -1,74 +1,257 @@
 import 'dart:collection';
+import 'dart:convert';
 import 'dart:core';
+import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:http/http.dart' as http;
+
+import 'ffi.dart';
+import 'keygen.dart';
 
 _keysList() => "storage:KEYS";
 _key(String id) => "storage:KEY:$id";
+_keyAdmin(String id) => "storage:KEY:ADMIN:$id";
 _tokenKey() => "storage:TOKEN";
+
+extension IsOk on http.Response {
+  bool get ok {
+    return (statusCode ~/ 100) == 2;
+  }
+}
+
+class Keystore {
+  String publicKey;
+  String adminKey;
+  String shareableKey;
+
+  Keystore(this.publicKey, this.shareableKey, this.adminKey);
+}
+
+class KeyRecord {
+  final int id;
+  final String roomId;
+  final int threshold;
+  final int parties;
+  final String name;
+  final String description;
+  final List<String> tags;
+  final String publicKey;
+
+  KeyRecord(this.id, this.roomId, this.threshold, this.parties, this.name,
+      this.description, this.tags, this.publicKey);
+
+  KeyRecord.fromJson(Map<String, dynamic> json)
+      : id = json['id'],
+        roomId = json['roomId'],
+        threshold = json['participantsThreshold'],
+        parties = json['parties'] ?? 3,
+        name = json['name'],
+        description = json['description'],
+        tags =
+            (json['tags'] as List<dynamic>).map((e) => e.toString()).toList(),
+        publicKey = json['publicKey'];
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'roomId': roomId,
+        'participantsThreshold': threshold,
+        'parties': parties,
+        'name': name,
+        'description': description,
+        'tags': tags,
+        'publicKey': publicKey,
+      };
+}
 
 class AppState extends ChangeNotifier {
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
   String? _accessToken;
   String? _shareableKey;
   String? _ownerKey;
-  final HashSet<String> _knownKeys = HashSet();
+  final Set<String> _secretKeys = {};
+  final HashMap<String, KeyRecord> _knownKeys = HashMap();
 
   String? get accessToken => _accessToken;
-  String? get shareableKey => _shareableKey;
-  String? get ownerKey => _ownerKey;
 
-  UnmodifiableSetView<String> get knownKeys => UnmodifiableSetView({"0x87b2F4D0B3325D5e29E5d195164424b1135dF71B"});
-
-  setAccessToken(String token) {
-    _accessToken = token;
-    _storage.write(key: _tokenKey(), value: token);
-    notifyListeners();
+  initialize() async {
+    await _loadStorage();
   }
 
-  removeAccessToken() {
-    _accessToken = null;
-    _storage.write(key: _tokenKey(), value: _accessToken);
-    notifyListeners();
-  }
-
-  loadAccessToken() async {
-    _accessToken = await _storage.read(key: _tokenKey());
-    notifyListeners();
-  }
-
-  storeShareableKey(String id, String key) async {
-    if (id.contains(":")) {
-      throw "Unsupported id with ':' charated";
-    }
-
-    if (!_knownKeys.contains(id)) {
-      _knownKeys.add(id);
-      await _storage.write(key: _keysList(), value: _knownKeys.join(":"));
+  set accessToken(String? value) {
+    if (_accessToken != value) {
+      _accessToken = value;
+      _storage.write(key: _tokenKey(), value: _accessToken);
       notifyListeners();
-    }
-  }
 
-  readShareableKey(String id) async {
-    if (_knownKeys.contains(id)) {
-      final keyFile = await _storage.read(key: _key(id));
-      if (keyFile != _shareableKey) {
-        _shareableKey = keyFile;
-        notifyListeners();
+      if (_accessToken != null) {
+        fetchKeys();
       }
-    } else if (_shareableKey != null) {
-      _shareableKey = null;
+    }
+  }
+
+  String? get shareableKey => _shareableKey;
+  set shareableKey(String? value) {
+    if (_shareableKey != value) {
+      _shareableKey = value;
       notifyListeners();
     }
   }
 
-  setOwnerKey(String key) {
-    _accessToken = key;
-    notifyListeners();    
+  String? get ownerKey => _ownerKey;
+  set ownerKey(String? value) {
+    if (_ownerKey != value) {
+      _ownerKey = value;
+      notifyListeners();
+    }
   }
 
-  loadKeys() async {
-    final list = await _storage.read(key: _keysList());
-    _knownKeys.addAll(list?.split(";") ?? []);
+  Future<String?> readShareableKey() async {
+    return _shareableKey != null
+        ? await _storage.read(key: _key(_shareableKey!))
+        : null;
+  }
+
+  Future<String?> readOwnerKey() async {
+    return _ownerKey != null
+        ? await _storage.read(key: _key(_ownerKey!))
+        : null;
+  }
+
+  List<KeyRecord> get knownKeys => _knownKeys.values
+      // .where((element) => _secretKeys.contains(element.publicKey))
+      .toList();
+
+  List<String> get availableKeys {
+    var list = knownKeys.map((k) => k.publicKey).toList();
+    list.addAll(_secretKeys);
+    return list;
+  }
+
+  _loadStorage() async {
+    accessToken = await _storage.read(key: _tokenKey());
+    _secretKeys.addAll(await _storage
+        .read(key: _keysList())
+        .then((raw) => raw?.split(";") ?? []));
+
+    notifyListeners();
+  }
+
+  addKey(String publicKey, String shareable, String admin) async {
+    if (publicKey.contains(":")) {
+      throw "Unsupported id with ':' charater";
+    }
+
+    if (!_secretKeys.contains(publicKey)) {
+      _secretKeys.add(publicKey);
+      await _storage.write(key: _keysList(), value: _secretKeys.join(":"));
+      await _storage.write(key: _key(publicKey), value: shareable);
+      await _storage.write(key: _keyAdmin(publicKey), value: admin);
+      await fetchKeys();
+      notifyListeners();
+    } else {
+      throw "Duplicate id?!";
+    }
+
+    return null;
+  }
+
+  generateKey(String name, String description) async {
+    if (accessToken == null) {
+      throw "Forbidden! Please authenticate firstly";
+    }
+    // begin process
+    final answer = await http.post(Uri.parse("http://10.0.2.2:9001/api/keys"),
+        body: jsonEncode(<String, dynamic>{
+          "participantsThreshold": 2,
+          "participantsCount": 3,
+          "timeoutSeconds": 60,
+          "name": name,
+          "description": description,
+          "tags": ["shareable"]
+        }),
+        headers: apiHeaders);
+
+    if (!answer.ok) {
+      log("Status code is ${answer.statusCode}");
+      throw answer.body;
+    }
+
+    final record = jsonDecode(answer.body);
+    final String room = record['roomId'];
+    final shareableKeygenerator =
+        await Keygenerator.create(2, "http://10.0.2.2:8000", room);
+    final adminKeygenerator =
+        await Keygenerator.create(3, "http://10.0.2.2:8000", room);
+
+    final results = await Future.wait(
+        [shareableKeygenerator.keygen(), adminKeygenerator.keygen()]);
+
+    var publicKey = await api.toPublicKey(key: results[0], compressed: true);
+
+    log("Key is $publicKey");
+
+    var key = Keystore(publicKey, results[0], results[1]);
+    await addKey(key.publicKey, key.shareableKey, key.adminKey);
+
+    return key;
+  }
+
+  // storeShareableKey(String id, String key) async {
+  //   if (id.contains(":")) {
+  //     throw "Unsupported id with ':' charated";
+  //   }
+
+  //   if (!_knownKeys.contains(id)) {
+  //     _knownKeys.add(id);
+  //     await _storage.write(key: _keysList(), value: _knownKeys.join(":"));
+  //     notifyListeners();
+  //   }
+  // }
+
+  // readShareableKey(String id) async {
+  //   if (_knownKeys.contains(id)) {
+  //     final keyFile = await _storage.read(key: _key(id));
+  //     if (keyFile != _shareableKey) {
+  //       _shareableKey = keyFile;
+  //       notifyListeners();
+  //     }
+  //   } else if (_shareableKey != null) {
+  //     _shareableKey = null;
+  //     notifyListeners();
+  //   }
+  // }
+
+  // setOwnerKey(String key) {
+  //   _accessToken = key;
+  //   notifyListeners();
+  // }
+
+  // loadKeys() async {
+  //   final list = await _storage.read(key: _keysList());
+  //   _knownKeys.addAll(list?.split(";") ?? []);
+  // }
+
+  Map<String, String>? get apiHeaders {
+    return <String, String>{
+      "Content-Type": "application/json",
+      "accept": "application/json",
+      "apiKey": accessToken ?? ""
+    };
+  }
+
+  fetchKeys() async {
+    log('fetching keys');
+    var response = await http.get(Uri.parse("http://10.0.2.2:9001/api/keys"),
+        headers: apiHeaders);
+
+    final keys = (jsonDecode(response.body) as List<dynamic>)
+        .map((element) => KeyRecord.fromJson(element))
+        .toList();
+
+    _knownKeys.addEntries(keys
+        .where((key) => key.publicKey != "")
+        .map((element) => MapEntry(element.publicKey, element)));
+    notifyListeners();
   }
 }

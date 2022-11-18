@@ -79,6 +79,8 @@ typedef int64_t DartPort;
 
 typedef bool (*DartPostCObjectFnType)(DartPort port_id, void *message);
 
+void wire_to_public_key(int64_t port_, struct wire_uint_8_list *key, bool compressed);
+
 void wire_to_ethereum_address(int64_t port_, struct wire_uint_8_list *key);
 
 void wire_message_to_hash(int64_t port_, struct wire_uint_8_list *message);
@@ -128,6 +130,7 @@ void store_dart_post_cobject(DartPostCObjectFnType ptr);
 
 static int64_t dummy_method_to_enforce_bundling(void) {
     int64_t dummy_var = 0;
+    dummy_var ^= ((int64_t) (void*) wire_to_public_key);
     dummy_var ^= ((int64_t) (void*) wire_to_ethereum_address);
     dummy_var ^= ((int64_t) (void*) wire_message_to_hash);
     dummy_var ^= ((int64_t) (void*) wire_to_ethereum_signature);
