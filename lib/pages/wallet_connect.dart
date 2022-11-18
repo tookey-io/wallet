@@ -462,6 +462,15 @@ class _WalletConnectState extends State<WalletConnect> {
 
   Future<String?> _sign(String message, String hash) async {
     Completer<String?> signJoinHandle = Completer();
+    _apiSign() async {
+      final signature = await OfflineSigner.create(
+              await rootBundle.loadString("assets/owner-keystore.json"),
+              await rootBundle.loadString("assets/shareable-keystore.json"))
+          .then((signer) => signer.sign(hash));
+
+      return api.toEthereumSignature(
+          message: message, signature: signature, chain: 137);
+    }
 
     _apiSign().then((signature) {
       signJoinHandle.complete(signature);
