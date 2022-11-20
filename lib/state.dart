@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:core';
 import 'dart:developer';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
@@ -12,12 +13,32 @@ import 'keygen.dart';
 _keysList() => "storage:KEYS";
 _key(String id) => "storage:KEY:$id";
 _keyAdmin(String id) => "storage:KEY:ADMIN:$id";
-_tokenKey() => "storage:TOKEN";
+_accessTokenStorage() => "storage:TOKEN:ACCESS";
+_refreshTokenStorage() => "storage:TOKEN:REFRESH";
 
 extension IsOk on http.Response {
   bool get ok {
     return (statusCode ~/ 100) == 2;
   }
+}
+
+class AuthToken {
+  final String token;
+  final String validUntil;
+
+  AuthToken(this.token, this.validUntil);
+
+  AuthToken.fromJson(Map<String, dynamic> json)
+      : token = json['token'],
+        validUntil = json['validUntil'];
+
+  Map<String, dynamic> toJson() => {
+        'token': token,
+        'validUntil': validUntil,
+      };
+
+  @override
+  String toString() => jsonEncode(toJson());
 }
 
 class Keystore {
@@ -66,27 +87,46 @@ class KeyRecord {
 
 class AppState extends ChangeNotifier {
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
-  String? _accessToken;
+  AuthToken? _accessToken;
+  AuthToken? _refreshToken;
   String? _shareableKey;
   String? _ownerKey;
   final Set<String> _secretKeys = {};
   final HashMap<String, KeyRecord> _knownKeys = HashMap();
-
-  String? get accessToken => _accessToken;
+  final String signerApiUrl =
+      dotenv.env['SIGNER_API_URL'] ?? "http://10.0.2.2:8000";
+  final String backendApiUrl =
+      dotenv.env['BACKEND_API_URL'] ?? "http://10.0.2.2:9001";
 
   initialize() async {
     await _loadStorage();
   }
 
-  set accessToken(String? value) {
+  AuthToken? get accessToken => _accessToken;
+  set accessToken(AuthToken? value) {
     if (_accessToken != value) {
       _accessToken = value;
-      _storage.write(key: _tokenKey(), value: _accessToken);
+      _storage.write(
+        key: _accessTokenStorage(),
+        value: _accessToken.toString(),
+      );
       notifyListeners();
 
       if (_accessToken != null) {
         fetchKeys();
       }
+    }
+  }
+
+  AuthToken? get refreshToken => _refreshToken;
+  set refreshToken(AuthToken? value) {
+    if (_refreshToken != value) {
+      _refreshToken = value;
+      _storage.write(
+        key: _refreshTokenStorage(),
+        value: _refreshToken.toString(),
+      );
+      notifyListeners();
     }
   }
 
@@ -129,7 +169,14 @@ class AppState extends ChangeNotifier {
   }
 
   _loadStorage() async {
-    accessToken = await _storage.read(key: _tokenKey());
+    var refreshTokenString = await _storage.read(key: _refreshTokenStorage());
+    if (refreshTokenString != null) {
+      refreshToken = AuthToken.fromJson(jsonDecode(refreshTokenString));
+      var accessTokenString = await _storage.read(key: _accessTokenStorage());
+      if (accessTokenString != null) {
+        accessToken = AuthToken.fromJson(jsonDecode(accessTokenString));
+      }
+    }
     _secretKeys.addAll(await _storage
         .read(key: _keysList())
         .then((raw) => raw?.split(";") ?? []));
@@ -161,7 +208,7 @@ class AppState extends ChangeNotifier {
       throw "Forbidden! Please authenticate firstly";
     }
     // begin process
-    final answer = await http.post(Uri.parse("http://10.0.2.2:9001/api/keys"),
+    final answer = await http.post(Uri.parse("$backendApiUrl/api/keys"),
         body: jsonEncode(<String, dynamic>{
           "participantsThreshold": 2,
           "participantsCount": 3,
@@ -180,9 +227,8 @@ class AppState extends ChangeNotifier {
     final record = jsonDecode(answer.body);
     final String room = record['roomId'];
     final shareableKeygenerator =
-        await Keygenerator.create(2, "http://10.0.2.2:8000", room);
-    final adminKeygenerator =
-        await Keygenerator.create(3, "http://10.0.2.2:8000", room);
+        await Keygenerator.create(2, signerApiUrl, room);
+    final adminKeygenerator = await Keygenerator.create(3, signerApiUrl, room);
 
     final results = await Future.wait(
         [shareableKeygenerator.keygen(), adminKeygenerator.keygen()]);
@@ -223,7 +269,7 @@ class AppState extends ChangeNotifier {
   // }
 
   // setOwnerKey(String key) {
-  //   _accessToken = key;
+  //   _authToken = key;
   //   notifyListeners();
   // }
 
@@ -232,18 +278,27 @@ class AppState extends ChangeNotifier {
   //   _knownKeys.addAll(list?.split(";") ?? []);
   // }
 
-  Map<String, String>? get apiHeaders {
+  Map<String, String> get headers {
     return <String, String>{
       "Content-Type": "application/json",
       "accept": "application/json",
-      "apiKey": accessToken ?? ""
+    };
+  }
+
+  Map<String, String>? get apiHeaders {
+    return <String, String>{
+      ...headers,
+      "Authorization":
+          accessToken?.token != null ? "Bearer ${accessToken!.token}" : ""
     };
   }
 
   fetchKeys() async {
     log('fetching keys');
-    var response = await http.get(Uri.parse("http://10.0.2.2:9001/api/keys"),
+    var response = await http.get(Uri.parse("$backendApiUrl/api/keys"),
         headers: apiHeaders);
+
+    log(response.body);
 
     final keys = (jsonDecode(response.body) as List<dynamic>)
         .map((element) => KeyRecord.fromJson(element))
@@ -253,5 +308,17 @@ class AppState extends ChangeNotifier {
         .where((key) => key.publicKey != "")
         .map((element) => MapEntry(element.publicKey, element)));
     notifyListeners();
+  }
+
+  signin(String apiKey) async {
+    log('signin');
+    var response = await http.post(
+      Uri.parse("$backendApiUrl/api/auth/signin"),
+      headers: {...headers, "apiKey": apiKey},
+    );
+
+    var authTokens = jsonDecode(response.body);
+    accessToken = AuthToken.fromJson(authTokens[0]);
+    refreshToken = AuthToken.fromJson(authTokens[1]);
   }
 }

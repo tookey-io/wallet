@@ -53,3 +53,5 @@ pubspec.lock
 .cxx
 
 *keystore.json
+
+.env

@@ -1,13 +1,12 @@
-import 'dart:io';
-
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 class QRScanner extends StatefulWidget {
   final Function(String) onData;
   final VoidCallback? onCancel;
-  QRScanner({ required this.onData, this.onCancel, Key? key}) : super(key: key);
+  const QRScanner({required this.onData, this.onCancel, Key? key})
+      : super(key: key);
 
   @override
   State<StatefulWidget> createState() => _QRScannerState();
@@ -34,43 +33,63 @@ class _QRScannerState extends State<QRScanner> {
   @override
   Widget build(BuildContext context) {
     return Stack(
-          children: [
-            MobileScanner(controller: controller, onDetect: (barcode, args) {
+      children: [
+        MobileScanner(
+            controller: controller,
+            onDetect: (barcode, args) {
               setState(() {
                 result = barcode;
               });
 
               if (barcode.rawValue == null) {
                 debugPrint('Failed to scan Barcode');
+                Navigator.pop(context);
               } else {
                 final String code = barcode.rawValue!;
                 widget.onData(code);
               }
             }),
-            // QRView(
-            //   key: qrKey,
-            //   onQRViewCreated: _onQRViewCreated,
-            // ),
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Padding(
-                  padding: const EdgeInsets.all(40),
-                  child: Center(
-                    child: (result != null)
-                        ? Text(
-                            'Barcode Type: ${describeEnum(result!.format)}   Data: ${result!.rawValue}')
-                        : FloatingActionButton(
-                            backgroundColor: Colors.white,
-                            onPressed: () async {
-                              await controller.switchCamera();
-                            },
-                            child: const Icon(Icons.flip_camera_android, color: Colors.blue,),
-                          ),
-                  )),
-            )
-          ],
-        );
+        Positioned(
+          bottom: 21,
+          left: 0,
+          right: 0,
+          child: Padding(
+              padding: const EdgeInsets.only(bottom: 30),
+              child: Center(
+                child: FloatingActionButton(
+                  heroTag: 'close',
+                  backgroundColor: Colors.white,
+                  onPressed: () async {
+                    Navigator.pop(context);
+                  },
+                  child: const Icon(
+                    Icons.close,
+                    color: Colors.red,
+                  ),
+                ),
+              )),
+        ),
+        if (dotenv.env['TEST_ENV'] != null) ...[
+          Positioned(
+            bottom: 21,
+            right: 0,
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 30, right: 30),
+              child: FloatingActionButton(
+                heroTag: 'switchCamera',
+                backgroundColor: Colors.white,
+                onPressed: () async {
+                  controller.switchCamera();
+                },
+                child: const Icon(
+                  Icons.cameraswitch_outlined,
+                  color: Colors.blue,
+                ),
+              ),
+            ),
+          )
+        ]
+      ],
+    );
   }
 }

@@ -27,11 +27,11 @@ mixin _$IncomingMessage {
       throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult Function(TookeyScenarios scenario)? begin,
-    TResult Function(int index, int? party)? participant,
-    TResult Function(Uint16List indexes, Uint16List parties)? group,
-    TResult Function(String packet)? communication,
-    TResult Function()? close,
+    TResult? Function(TookeyScenarios scenario)? begin,
+    TResult? Function(int index, int? party)? participant,
+    TResult? Function(Uint16List indexes, Uint16List parties)? group,
+    TResult? Function(String packet)? communication,
+    TResult? Function()? close,
   }) =>
       throw _privateConstructorUsedError;
   @optionalTypeArgs
@@ -56,11 +56,11 @@ mixin _$IncomingMessage {
       throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
-    TResult Function(IncomingMessage_Begin value)? begin,
-    TResult Function(IncomingMessage_Participant value)? participant,
-    TResult Function(IncomingMessage_Group value)? group,
-    TResult Function(IncomingMessage_Communication value)? communication,
-    TResult Function(IncomingMessage_Close value)? close,
+    TResult? Function(IncomingMessage_Begin value)? begin,
+    TResult? Function(IncomingMessage_Participant value)? participant,
+    TResult? Function(IncomingMessage_Group value)? group,
+    TResult? Function(IncomingMessage_Communication value)? communication,
+    TResult? Function(IncomingMessage_Close value)? close,
   }) =>
       throw _privateConstructorUsedError;
   @optionalTypeArgs
@@ -79,17 +79,18 @@ mixin _$IncomingMessage {
 abstract class $IncomingMessageCopyWith<$Res> {
   factory $IncomingMessageCopyWith(
           IncomingMessage value, $Res Function(IncomingMessage) then) =
-      _$IncomingMessageCopyWithImpl<$Res>;
+      _$IncomingMessageCopyWithImpl<$Res, IncomingMessage>;
 }
 
 /// @nodoc
-class _$IncomingMessageCopyWithImpl<$Res>
+class _$IncomingMessageCopyWithImpl<$Res, $Val extends IncomingMessage>
     implements $IncomingMessageCopyWith<$Res> {
   _$IncomingMessageCopyWithImpl(this._value, this._then);
 
-  final IncomingMessage _value;
   // ignore: unused_field
-  final $Res Function(IncomingMessage) _then;
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
 }
 
 /// @nodoc
@@ -97,6 +98,7 @@ abstract class _$$IncomingMessage_BeginCopyWith<$Res> {
   factory _$$IncomingMessage_BeginCopyWith(_$IncomingMessage_Begin value,
           $Res Function(_$IncomingMessage_Begin) then) =
       __$$IncomingMessage_BeginCopyWithImpl<$Res>;
+  @useResult
   $Res call({TookeyScenarios scenario});
 
   $TookeyScenariosCopyWith<$Res> get scenario;
@@ -104,21 +106,19 @@ abstract class _$$IncomingMessage_BeginCopyWith<$Res> {
 
 /// @nodoc
 class __$$IncomingMessage_BeginCopyWithImpl<$Res>
-    extends _$IncomingMessageCopyWithImpl<$Res>
+    extends _$IncomingMessageCopyWithImpl<$Res, _$IncomingMessage_Begin>
     implements _$$IncomingMessage_BeginCopyWith<$Res> {
   __$$IncomingMessage_BeginCopyWithImpl(_$IncomingMessage_Begin _value,
       $Res Function(_$IncomingMessage_Begin) _then)
-      : super(_value, (v) => _then(v as _$IncomingMessage_Begin));
+      : super(_value, _then);
 
-  @override
-  _$IncomingMessage_Begin get _value => super._value as _$IncomingMessage_Begin;
-
+  @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? scenario = freezed,
+    Object? scenario = null,
   }) {
     return _then(_$IncomingMessage_Begin(
-      scenario: scenario == freezed
+      scenario: null == scenario
           ? _value.scenario
           : scenario // ignore: cast_nullable_to_non_nullable
               as TookeyScenarios,
@@ -126,6 +126,7 @@ class __$$IncomingMessage_BeginCopyWithImpl<$Res>
   }
 
   @override
+  @pragma('vm:prefer-inline')
   $TookeyScenariosCopyWith<$Res> get scenario {
     return $TookeyScenariosCopyWith<$Res>(_value.scenario, (value) {
       return _then(_value.copyWith(scenario: value));
@@ -151,15 +152,16 @@ class _$IncomingMessage_Begin implements IncomingMessage_Begin {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$IncomingMessage_Begin &&
-            const DeepCollectionEquality().equals(other.scenario, scenario));
+            (identical(other.scenario, scenario) ||
+                other.scenario == scenario));
   }
 
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, const DeepCollectionEquality().hash(scenario));
+  int get hashCode => Object.hash(runtimeType, scenario);
 
   @JsonKey(ignore: true)
   @override
+  @pragma('vm:prefer-inline')
   _$$IncomingMessage_BeginCopyWith<_$IncomingMessage_Begin> get copyWith =>
       __$$IncomingMessage_BeginCopyWithImpl<_$IncomingMessage_Begin>(
           this, _$identity);
@@ -179,11 +181,11 @@ class _$IncomingMessage_Begin implements IncomingMessage_Begin {
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult Function(TookeyScenarios scenario)? begin,
-    TResult Function(int index, int? party)? participant,
-    TResult Function(Uint16List indexes, Uint16List parties)? group,
-    TResult Function(String packet)? communication,
-    TResult Function()? close,
+    TResult? Function(TookeyScenarios scenario)? begin,
+    TResult? Function(int index, int? party)? participant,
+    TResult? Function(Uint16List indexes, Uint16List parties)? group,
+    TResult? Function(String packet)? communication,
+    TResult? Function()? close,
   }) {
     return begin?.call(scenario);
   }
@@ -220,11 +222,11 @@ class _$IncomingMessage_Begin implements IncomingMessage_Begin {
   @override
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
-    TResult Function(IncomingMessage_Begin value)? begin,
-    TResult Function(IncomingMessage_Participant value)? participant,
-    TResult Function(IncomingMessage_Group value)? group,
-    TResult Function(IncomingMessage_Communication value)? communication,
-    TResult Function(IncomingMessage_Close value)? close,
+    TResult? Function(IncomingMessage_Begin value)? begin,
+    TResult? Function(IncomingMessage_Participant value)? participant,
+    TResult? Function(IncomingMessage_Group value)? group,
+    TResult? Function(IncomingMessage_Communication value)? communication,
+    TResult? Function(IncomingMessage_Close value)? close,
   }) {
     return begin?.call(this);
   }
@@ -262,33 +264,31 @@ abstract class _$$IncomingMessage_ParticipantCopyWith<$Res> {
           _$IncomingMessage_Participant value,
           $Res Function(_$IncomingMessage_Participant) then) =
       __$$IncomingMessage_ParticipantCopyWithImpl<$Res>;
+  @useResult
   $Res call({int index, int? party});
 }
 
 /// @nodoc
 class __$$IncomingMessage_ParticipantCopyWithImpl<$Res>
-    extends _$IncomingMessageCopyWithImpl<$Res>
+    extends _$IncomingMessageCopyWithImpl<$Res, _$IncomingMessage_Participant>
     implements _$$IncomingMessage_ParticipantCopyWith<$Res> {
   __$$IncomingMessage_ParticipantCopyWithImpl(
       _$IncomingMessage_Participant _value,
       $Res Function(_$IncomingMessage_Participant) _then)
-      : super(_value, (v) => _then(v as _$IncomingMessage_Participant));
+      : super(_value, _then);
 
-  @override
-  _$IncomingMessage_Participant get _value =>
-      super._value as _$IncomingMessage_Participant;
-
+  @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? index = freezed,
+    Object? index = null,
     Object? party = freezed,
   }) {
     return _then(_$IncomingMessage_Participant(
-      index: index == freezed
+      index: null == index
           ? _value.index
           : index // ignore: cast_nullable_to_non_nullable
               as int,
-      party: party == freezed
+      party: freezed == party
           ? _value.party
           : party // ignore: cast_nullable_to_non_nullable
               as int?,
@@ -316,18 +316,16 @@ class _$IncomingMessage_Participant implements IncomingMessage_Participant {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$IncomingMessage_Participant &&
-            const DeepCollectionEquality().equals(other.index, index) &&
-            const DeepCollectionEquality().equals(other.party, party));
+            (identical(other.index, index) || other.index == index) &&
+            (identical(other.party, party) || other.party == party));
   }
 
   @override
-  int get hashCode => Object.hash(
-      runtimeType,
-      const DeepCollectionEquality().hash(index),
-      const DeepCollectionEquality().hash(party));
+  int get hashCode => Object.hash(runtimeType, index, party);
 
   @JsonKey(ignore: true)
   @override
+  @pragma('vm:prefer-inline')
   _$$IncomingMessage_ParticipantCopyWith<_$IncomingMessage_Participant>
       get copyWith => __$$IncomingMessage_ParticipantCopyWithImpl<
           _$IncomingMessage_Participant>(this, _$identity);
@@ -347,11 +345,11 @@ class _$IncomingMessage_Participant implements IncomingMessage_Participant {
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult Function(TookeyScenarios scenario)? begin,
-    TResult Function(int index, int? party)? participant,
-    TResult Function(Uint16List indexes, Uint16List parties)? group,
-    TResult Function(String packet)? communication,
-    TResult Function()? close,
+    TResult? Function(TookeyScenarios scenario)? begin,
+    TResult? Function(int index, int? party)? participant,
+    TResult? Function(Uint16List indexes, Uint16List parties)? group,
+    TResult? Function(String packet)? communication,
+    TResult? Function()? close,
   }) {
     return participant?.call(index, party);
   }
@@ -388,11 +386,11 @@ class _$IncomingMessage_Participant implements IncomingMessage_Participant {
   @override
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
-    TResult Function(IncomingMessage_Begin value)? begin,
-    TResult Function(IncomingMessage_Participant value)? participant,
-    TResult Function(IncomingMessage_Group value)? group,
-    TResult Function(IncomingMessage_Communication value)? communication,
-    TResult Function(IncomingMessage_Close value)? close,
+    TResult? Function(IncomingMessage_Begin value)? begin,
+    TResult? Function(IncomingMessage_Participant value)? participant,
+    TResult? Function(IncomingMessage_Group value)? group,
+    TResult? Function(IncomingMessage_Communication value)? communication,
+    TResult? Function(IncomingMessage_Close value)? close,
   }) {
     return participant?.call(this);
   }
@@ -431,31 +429,30 @@ abstract class _$$IncomingMessage_GroupCopyWith<$Res> {
   factory _$$IncomingMessage_GroupCopyWith(_$IncomingMessage_Group value,
           $Res Function(_$IncomingMessage_Group) then) =
       __$$IncomingMessage_GroupCopyWithImpl<$Res>;
+  @useResult
   $Res call({Uint16List indexes, Uint16List parties});
 }
 
 /// @nodoc
 class __$$IncomingMessage_GroupCopyWithImpl<$Res>
-    extends _$IncomingMessageCopyWithImpl<$Res>
+    extends _$IncomingMessageCopyWithImpl<$Res, _$IncomingMessage_Group>
     implements _$$IncomingMessage_GroupCopyWith<$Res> {
   __$$IncomingMessage_GroupCopyWithImpl(_$IncomingMessage_Group _value,
       $Res Function(_$IncomingMessage_Group) _then)
-      : super(_value, (v) => _then(v as _$IncomingMessage_Group));
+      : super(_value, _then);
 
-  @override
-  _$IncomingMessage_Group get _value => super._value as _$IncomingMessage_Group;
-
+  @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? indexes = freezed,
-    Object? parties = freezed,
+    Object? indexes = null,
+    Object? parties = null,
   }) {
     return _then(_$IncomingMessage_Group(
-      indexes: indexes == freezed
+      indexes: null == indexes
           ? _value.indexes
           : indexes // ignore: cast_nullable_to_non_nullable
               as Uint16List,
-      parties: parties == freezed
+      parties: null == parties
           ? _value.parties
           : parties // ignore: cast_nullable_to_non_nullable
               as Uint16List,
@@ -495,6 +492,7 @@ class _$IncomingMessage_Group implements IncomingMessage_Group {
 
   @JsonKey(ignore: true)
   @override
+  @pragma('vm:prefer-inline')
   _$$IncomingMessage_GroupCopyWith<_$IncomingMessage_Group> get copyWith =>
       __$$IncomingMessage_GroupCopyWithImpl<_$IncomingMessage_Group>(
           this, _$identity);
@@ -514,11 +512,11 @@ class _$IncomingMessage_Group implements IncomingMessage_Group {
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult Function(TookeyScenarios scenario)? begin,
-    TResult Function(int index, int? party)? participant,
-    TResult Function(Uint16List indexes, Uint16List parties)? group,
-    TResult Function(String packet)? communication,
-    TResult Function()? close,
+    TResult? Function(TookeyScenarios scenario)? begin,
+    TResult? Function(int index, int? party)? participant,
+    TResult? Function(Uint16List indexes, Uint16List parties)? group,
+    TResult? Function(String packet)? communication,
+    TResult? Function()? close,
   }) {
     return group?.call(indexes, parties);
   }
@@ -555,11 +553,11 @@ class _$IncomingMessage_Group implements IncomingMessage_Group {
   @override
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
-    TResult Function(IncomingMessage_Begin value)? begin,
-    TResult Function(IncomingMessage_Participant value)? participant,
-    TResult Function(IncomingMessage_Group value)? group,
-    TResult Function(IncomingMessage_Communication value)? communication,
-    TResult Function(IncomingMessage_Close value)? close,
+    TResult? Function(IncomingMessage_Begin value)? begin,
+    TResult? Function(IncomingMessage_Participant value)? participant,
+    TResult? Function(IncomingMessage_Group value)? group,
+    TResult? Function(IncomingMessage_Communication value)? communication,
+    TResult? Function(IncomingMessage_Close value)? close,
   }) {
     return group?.call(this);
   }
@@ -599,28 +597,26 @@ abstract class _$$IncomingMessage_CommunicationCopyWith<$Res> {
           _$IncomingMessage_Communication value,
           $Res Function(_$IncomingMessage_Communication) then) =
       __$$IncomingMessage_CommunicationCopyWithImpl<$Res>;
+  @useResult
   $Res call({String packet});
 }
 
 /// @nodoc
 class __$$IncomingMessage_CommunicationCopyWithImpl<$Res>
-    extends _$IncomingMessageCopyWithImpl<$Res>
+    extends _$IncomingMessageCopyWithImpl<$Res, _$IncomingMessage_Communication>
     implements _$$IncomingMessage_CommunicationCopyWith<$Res> {
   __$$IncomingMessage_CommunicationCopyWithImpl(
       _$IncomingMessage_Communication _value,
       $Res Function(_$IncomingMessage_Communication) _then)
-      : super(_value, (v) => _then(v as _$IncomingMessage_Communication));
+      : super(_value, _then);
 
-  @override
-  _$IncomingMessage_Communication get _value =>
-      super._value as _$IncomingMessage_Communication;
-
+  @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? packet = freezed,
+    Object? packet = null,
   }) {
     return _then(_$IncomingMessage_Communication(
-      packet: packet == freezed
+      packet: null == packet
           ? _value.packet
           : packet // ignore: cast_nullable_to_non_nullable
               as String,
@@ -646,15 +642,15 @@ class _$IncomingMessage_Communication implements IncomingMessage_Communication {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$IncomingMessage_Communication &&
-            const DeepCollectionEquality().equals(other.packet, packet));
+            (identical(other.packet, packet) || other.packet == packet));
   }
 
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, const DeepCollectionEquality().hash(packet));
+  int get hashCode => Object.hash(runtimeType, packet);
 
   @JsonKey(ignore: true)
   @override
+  @pragma('vm:prefer-inline')
   _$$IncomingMessage_CommunicationCopyWith<_$IncomingMessage_Communication>
       get copyWith => __$$IncomingMessage_CommunicationCopyWithImpl<
           _$IncomingMessage_Communication>(this, _$identity);
@@ -674,11 +670,11 @@ class _$IncomingMessage_Communication implements IncomingMessage_Communication {
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult Function(TookeyScenarios scenario)? begin,
-    TResult Function(int index, int? party)? participant,
-    TResult Function(Uint16List indexes, Uint16List parties)? group,
-    TResult Function(String packet)? communication,
-    TResult Function()? close,
+    TResult? Function(TookeyScenarios scenario)? begin,
+    TResult? Function(int index, int? party)? participant,
+    TResult? Function(Uint16List indexes, Uint16List parties)? group,
+    TResult? Function(String packet)? communication,
+    TResult? Function()? close,
   }) {
     return communication?.call(packet);
   }
@@ -715,11 +711,11 @@ class _$IncomingMessage_Communication implements IncomingMessage_Communication {
   @override
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
-    TResult Function(IncomingMessage_Begin value)? begin,
-    TResult Function(IncomingMessage_Participant value)? participant,
-    TResult Function(IncomingMessage_Group value)? group,
-    TResult Function(IncomingMessage_Communication value)? communication,
-    TResult Function(IncomingMessage_Close value)? close,
+    TResult? Function(IncomingMessage_Begin value)? begin,
+    TResult? Function(IncomingMessage_Participant value)? participant,
+    TResult? Function(IncomingMessage_Group value)? group,
+    TResult? Function(IncomingMessage_Communication value)? communication,
+    TResult? Function(IncomingMessage_Close value)? close,
   }) {
     return communication?.call(this);
   }
@@ -760,14 +756,11 @@ abstract class _$$IncomingMessage_CloseCopyWith<$Res> {
 
 /// @nodoc
 class __$$IncomingMessage_CloseCopyWithImpl<$Res>
-    extends _$IncomingMessageCopyWithImpl<$Res>
+    extends _$IncomingMessageCopyWithImpl<$Res, _$IncomingMessage_Close>
     implements _$$IncomingMessage_CloseCopyWith<$Res> {
   __$$IncomingMessage_CloseCopyWithImpl(_$IncomingMessage_Close _value,
       $Res Function(_$IncomingMessage_Close) _then)
-      : super(_value, (v) => _then(v as _$IncomingMessage_Close));
-
-  @override
-  _$IncomingMessage_Close get _value => super._value as _$IncomingMessage_Close;
+      : super(_value, _then);
 }
 
 /// @nodoc
@@ -804,11 +797,11 @@ class _$IncomingMessage_Close implements IncomingMessage_Close {
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult Function(TookeyScenarios scenario)? begin,
-    TResult Function(int index, int? party)? participant,
-    TResult Function(Uint16List indexes, Uint16List parties)? group,
-    TResult Function(String packet)? communication,
-    TResult Function()? close,
+    TResult? Function(TookeyScenarios scenario)? begin,
+    TResult? Function(int index, int? party)? participant,
+    TResult? Function(Uint16List indexes, Uint16List parties)? group,
+    TResult? Function(String packet)? communication,
+    TResult? Function()? close,
   }) {
     return close?.call();
   }
@@ -845,11 +838,11 @@ class _$IncomingMessage_Close implements IncomingMessage_Close {
   @override
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
-    TResult Function(IncomingMessage_Begin value)? begin,
-    TResult Function(IncomingMessage_Participant value)? participant,
-    TResult Function(IncomingMessage_Group value)? group,
-    TResult Function(IncomingMessage_Communication value)? communication,
-    TResult Function(IncomingMessage_Close value)? close,
+    TResult? Function(IncomingMessage_Begin value)? begin,
+    TResult? Function(IncomingMessage_Participant value)? participant,
+    TResult? Function(IncomingMessage_Group value)? group,
+    TResult? Function(IncomingMessage_Communication value)? communication,
+    TResult? Function(IncomingMessage_Close value)? close,
   }) {
     return close?.call(this);
   }
@@ -889,12 +882,12 @@ mixin _$OutgoingMessage {
       throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult Function()? start,
-    TResult Function()? ready,
-    TResult Function(ErrCode code, String message)? issue,
-    TResult Function(String packet)? communication,
-    TResult Function(String encoded)? result,
-    TResult Function()? close,
+    TResult? Function()? start,
+    TResult? Function()? ready,
+    TResult? Function(ErrCode code, String message)? issue,
+    TResult? Function(String packet)? communication,
+    TResult? Function(String encoded)? result,
+    TResult? Function()? close,
   }) =>
       throw _privateConstructorUsedError;
   @optionalTypeArgs
@@ -921,12 +914,12 @@ mixin _$OutgoingMessage {
       throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
-    TResult Function(OutgoingMessage_Start value)? start,
-    TResult Function(OutgoingMessage_Ready value)? ready,
-    TResult Function(OutgoingMessage_Issue value)? issue,
-    TResult Function(OutgoingMessage_Communication value)? communication,
-    TResult Function(OutgoingMessage_Result value)? result,
-    TResult Function(OutgoingMessage_Close value)? close,
+    TResult? Function(OutgoingMessage_Start value)? start,
+    TResult? Function(OutgoingMessage_Ready value)? ready,
+    TResult? Function(OutgoingMessage_Issue value)? issue,
+    TResult? Function(OutgoingMessage_Communication value)? communication,
+    TResult? Function(OutgoingMessage_Result value)? result,
+    TResult? Function(OutgoingMessage_Close value)? close,
   }) =>
       throw _privateConstructorUsedError;
   @optionalTypeArgs
@@ -946,17 +939,18 @@ mixin _$OutgoingMessage {
 abstract class $OutgoingMessageCopyWith<$Res> {
   factory $OutgoingMessageCopyWith(
           OutgoingMessage value, $Res Function(OutgoingMessage) then) =
-      _$OutgoingMessageCopyWithImpl<$Res>;
+      _$OutgoingMessageCopyWithImpl<$Res, OutgoingMessage>;
 }
 
 /// @nodoc
-class _$OutgoingMessageCopyWithImpl<$Res>
+class _$OutgoingMessageCopyWithImpl<$Res, $Val extends OutgoingMessage>
     implements $OutgoingMessageCopyWith<$Res> {
   _$OutgoingMessageCopyWithImpl(this._value, this._then);
 
-  final OutgoingMessage _value;
   // ignore: unused_field
-  final $Res Function(OutgoingMessage) _then;
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
 }
 
 /// @nodoc
@@ -968,14 +962,11 @@ abstract class _$$OutgoingMessage_StartCopyWith<$Res> {
 
 /// @nodoc
 class __$$OutgoingMessage_StartCopyWithImpl<$Res>
-    extends _$OutgoingMessageCopyWithImpl<$Res>
+    extends _$OutgoingMessageCopyWithImpl<$Res, _$OutgoingMessage_Start>
     implements _$$OutgoingMessage_StartCopyWith<$Res> {
   __$$OutgoingMessage_StartCopyWithImpl(_$OutgoingMessage_Start _value,
       $Res Function(_$OutgoingMessage_Start) _then)
-      : super(_value, (v) => _then(v as _$OutgoingMessage_Start));
-
-  @override
-  _$OutgoingMessage_Start get _value => super._value as _$OutgoingMessage_Start;
+      : super(_value, _then);
 }
 
 /// @nodoc
@@ -1013,12 +1004,12 @@ class _$OutgoingMessage_Start implements OutgoingMessage_Start {
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult Function()? start,
-    TResult Function()? ready,
-    TResult Function(ErrCode code, String message)? issue,
-    TResult Function(String packet)? communication,
-    TResult Function(String encoded)? result,
-    TResult Function()? close,
+    TResult? Function()? start,
+    TResult? Function()? ready,
+    TResult? Function(ErrCode code, String message)? issue,
+    TResult? Function(String packet)? communication,
+    TResult? Function(String encoded)? result,
+    TResult? Function()? close,
   }) {
     return start?.call();
   }
@@ -1057,12 +1048,12 @@ class _$OutgoingMessage_Start implements OutgoingMessage_Start {
   @override
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
-    TResult Function(OutgoingMessage_Start value)? start,
-    TResult Function(OutgoingMessage_Ready value)? ready,
-    TResult Function(OutgoingMessage_Issue value)? issue,
-    TResult Function(OutgoingMessage_Communication value)? communication,
-    TResult Function(OutgoingMessage_Result value)? result,
-    TResult Function(OutgoingMessage_Close value)? close,
+    TResult? Function(OutgoingMessage_Start value)? start,
+    TResult? Function(OutgoingMessage_Ready value)? ready,
+    TResult? Function(OutgoingMessage_Issue value)? issue,
+    TResult? Function(OutgoingMessage_Communication value)? communication,
+    TResult? Function(OutgoingMessage_Result value)? result,
+    TResult? Function(OutgoingMessage_Close value)? close,
   }) {
     return start?.call(this);
   }
@@ -1098,14 +1089,11 @@ abstract class _$$OutgoingMessage_ReadyCopyWith<$Res> {
 
 /// @nodoc
 class __$$OutgoingMessage_ReadyCopyWithImpl<$Res>
-    extends _$OutgoingMessageCopyWithImpl<$Res>
+    extends _$OutgoingMessageCopyWithImpl<$Res, _$OutgoingMessage_Ready>
     implements _$$OutgoingMessage_ReadyCopyWith<$Res> {
   __$$OutgoingMessage_ReadyCopyWithImpl(_$OutgoingMessage_Ready _value,
       $Res Function(_$OutgoingMessage_Ready) _then)
-      : super(_value, (v) => _then(v as _$OutgoingMessage_Ready));
-
-  @override
-  _$OutgoingMessage_Ready get _value => super._value as _$OutgoingMessage_Ready;
+      : super(_value, _then);
 }
 
 /// @nodoc
@@ -1143,12 +1131,12 @@ class _$OutgoingMessage_Ready implements OutgoingMessage_Ready {
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult Function()? start,
-    TResult Function()? ready,
-    TResult Function(ErrCode code, String message)? issue,
-    TResult Function(String packet)? communication,
-    TResult Function(String encoded)? result,
-    TResult Function()? close,
+    TResult? Function()? start,
+    TResult? Function()? ready,
+    TResult? Function(ErrCode code, String message)? issue,
+    TResult? Function(String packet)? communication,
+    TResult? Function(String encoded)? result,
+    TResult? Function()? close,
   }) {
     return ready?.call();
   }
@@ -1187,12 +1175,12 @@ class _$OutgoingMessage_Ready implements OutgoingMessage_Ready {
   @override
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
-    TResult Function(OutgoingMessage_Start value)? start,
-    TResult Function(OutgoingMessage_Ready value)? ready,
-    TResult Function(OutgoingMessage_Issue value)? issue,
-    TResult Function(OutgoingMessage_Communication value)? communication,
-    TResult Function(OutgoingMessage_Result value)? result,
-    TResult Function(OutgoingMessage_Close value)? close,
+    TResult? Function(OutgoingMessage_Start value)? start,
+    TResult? Function(OutgoingMessage_Ready value)? ready,
+    TResult? Function(OutgoingMessage_Issue value)? issue,
+    TResult? Function(OutgoingMessage_Communication value)? communication,
+    TResult? Function(OutgoingMessage_Result value)? result,
+    TResult? Function(OutgoingMessage_Close value)? close,
   }) {
     return ready?.call(this);
   }
@@ -1224,31 +1212,30 @@ abstract class _$$OutgoingMessage_IssueCopyWith<$Res> {
   factory _$$OutgoingMessage_IssueCopyWith(_$OutgoingMessage_Issue value,
           $Res Function(_$OutgoingMessage_Issue) then) =
       __$$OutgoingMessage_IssueCopyWithImpl<$Res>;
+  @useResult
   $Res call({ErrCode code, String message});
 }
 
 /// @nodoc
 class __$$OutgoingMessage_IssueCopyWithImpl<$Res>
-    extends _$OutgoingMessageCopyWithImpl<$Res>
+    extends _$OutgoingMessageCopyWithImpl<$Res, _$OutgoingMessage_Issue>
     implements _$$OutgoingMessage_IssueCopyWith<$Res> {
   __$$OutgoingMessage_IssueCopyWithImpl(_$OutgoingMessage_Issue _value,
       $Res Function(_$OutgoingMessage_Issue) _then)
-      : super(_value, (v) => _then(v as _$OutgoingMessage_Issue));
+      : super(_value, _then);
 
-  @override
-  _$OutgoingMessage_Issue get _value => super._value as _$OutgoingMessage_Issue;
-
+  @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? code = freezed,
-    Object? message = freezed,
+    Object? code = null,
+    Object? message = null,
   }) {
     return _then(_$OutgoingMessage_Issue(
-      code: code == freezed
+      code: null == code
           ? _value.code
           : code // ignore: cast_nullable_to_non_nullable
               as ErrCode,
-      message: message == freezed
+      message: null == message
           ? _value.message
           : message // ignore: cast_nullable_to_non_nullable
               as String,
@@ -1276,18 +1263,16 @@ class _$OutgoingMessage_Issue implements OutgoingMessage_Issue {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$OutgoingMessage_Issue &&
-            const DeepCollectionEquality().equals(other.code, code) &&
-            const DeepCollectionEquality().equals(other.message, message));
+            (identical(other.code, code) || other.code == code) &&
+            (identical(other.message, message) || other.message == message));
   }
 
   @override
-  int get hashCode => Object.hash(
-      runtimeType,
-      const DeepCollectionEquality().hash(code),
-      const DeepCollectionEquality().hash(message));
+  int get hashCode => Object.hash(runtimeType, code, message);
 
   @JsonKey(ignore: true)
   @override
+  @pragma('vm:prefer-inline')
   _$$OutgoingMessage_IssueCopyWith<_$OutgoingMessage_Issue> get copyWith =>
       __$$OutgoingMessage_IssueCopyWithImpl<_$OutgoingMessage_Issue>(
           this, _$identity);
@@ -1308,12 +1293,12 @@ class _$OutgoingMessage_Issue implements OutgoingMessage_Issue {
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult Function()? start,
-    TResult Function()? ready,
-    TResult Function(ErrCode code, String message)? issue,
-    TResult Function(String packet)? communication,
-    TResult Function(String encoded)? result,
-    TResult Function()? close,
+    TResult? Function()? start,
+    TResult? Function()? ready,
+    TResult? Function(ErrCode code, String message)? issue,
+    TResult? Function(String packet)? communication,
+    TResult? Function(String encoded)? result,
+    TResult? Function()? close,
   }) {
     return issue?.call(code, message);
   }
@@ -1352,12 +1337,12 @@ class _$OutgoingMessage_Issue implements OutgoingMessage_Issue {
   @override
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
-    TResult Function(OutgoingMessage_Start value)? start,
-    TResult Function(OutgoingMessage_Ready value)? ready,
-    TResult Function(OutgoingMessage_Issue value)? issue,
-    TResult Function(OutgoingMessage_Communication value)? communication,
-    TResult Function(OutgoingMessage_Result value)? result,
-    TResult Function(OutgoingMessage_Close value)? close,
+    TResult? Function(OutgoingMessage_Start value)? start,
+    TResult? Function(OutgoingMessage_Ready value)? ready,
+    TResult? Function(OutgoingMessage_Issue value)? issue,
+    TResult? Function(OutgoingMessage_Communication value)? communication,
+    TResult? Function(OutgoingMessage_Result value)? result,
+    TResult? Function(OutgoingMessage_Close value)? close,
   }) {
     return issue?.call(this);
   }
@@ -1398,28 +1383,26 @@ abstract class _$$OutgoingMessage_CommunicationCopyWith<$Res> {
           _$OutgoingMessage_Communication value,
           $Res Function(_$OutgoingMessage_Communication) then) =
       __$$OutgoingMessage_CommunicationCopyWithImpl<$Res>;
+  @useResult
   $Res call({String packet});
 }
 
 /// @nodoc
 class __$$OutgoingMessage_CommunicationCopyWithImpl<$Res>
-    extends _$OutgoingMessageCopyWithImpl<$Res>
+    extends _$OutgoingMessageCopyWithImpl<$Res, _$OutgoingMessage_Communication>
     implements _$$OutgoingMessage_CommunicationCopyWith<$Res> {
   __$$OutgoingMessage_CommunicationCopyWithImpl(
       _$OutgoingMessage_Communication _value,
       $Res Function(_$OutgoingMessage_Communication) _then)
-      : super(_value, (v) => _then(v as _$OutgoingMessage_Communication));
+      : super(_value, _then);
 
-  @override
-  _$OutgoingMessage_Communication get _value =>
-      super._value as _$OutgoingMessage_Communication;
-
+  @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? packet = freezed,
+    Object? packet = null,
   }) {
     return _then(_$OutgoingMessage_Communication(
-      packet: packet == freezed
+      packet: null == packet
           ? _value.packet
           : packet // ignore: cast_nullable_to_non_nullable
               as String,
@@ -1445,15 +1428,15 @@ class _$OutgoingMessage_Communication implements OutgoingMessage_Communication {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$OutgoingMessage_Communication &&
-            const DeepCollectionEquality().equals(other.packet, packet));
+            (identical(other.packet, packet) || other.packet == packet));
   }
 
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, const DeepCollectionEquality().hash(packet));
+  int get hashCode => Object.hash(runtimeType, packet);
 
   @JsonKey(ignore: true)
   @override
+  @pragma('vm:prefer-inline')
   _$$OutgoingMessage_CommunicationCopyWith<_$OutgoingMessage_Communication>
       get copyWith => __$$OutgoingMessage_CommunicationCopyWithImpl<
           _$OutgoingMessage_Communication>(this, _$identity);
@@ -1474,12 +1457,12 @@ class _$OutgoingMessage_Communication implements OutgoingMessage_Communication {
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult Function()? start,
-    TResult Function()? ready,
-    TResult Function(ErrCode code, String message)? issue,
-    TResult Function(String packet)? communication,
-    TResult Function(String encoded)? result,
-    TResult Function()? close,
+    TResult? Function()? start,
+    TResult? Function()? ready,
+    TResult? Function(ErrCode code, String message)? issue,
+    TResult? Function(String packet)? communication,
+    TResult? Function(String encoded)? result,
+    TResult? Function()? close,
   }) {
     return communication?.call(packet);
   }
@@ -1518,12 +1501,12 @@ class _$OutgoingMessage_Communication implements OutgoingMessage_Communication {
   @override
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
-    TResult Function(OutgoingMessage_Start value)? start,
-    TResult Function(OutgoingMessage_Ready value)? ready,
-    TResult Function(OutgoingMessage_Issue value)? issue,
-    TResult Function(OutgoingMessage_Communication value)? communication,
-    TResult Function(OutgoingMessage_Result value)? result,
-    TResult Function(OutgoingMessage_Close value)? close,
+    TResult? Function(OutgoingMessage_Start value)? start,
+    TResult? Function(OutgoingMessage_Ready value)? ready,
+    TResult? Function(OutgoingMessage_Issue value)? issue,
+    TResult? Function(OutgoingMessage_Communication value)? communication,
+    TResult? Function(OutgoingMessage_Result value)? result,
+    TResult? Function(OutgoingMessage_Close value)? close,
   }) {
     return communication?.call(this);
   }
@@ -1561,27 +1544,25 @@ abstract class _$$OutgoingMessage_ResultCopyWith<$Res> {
   factory _$$OutgoingMessage_ResultCopyWith(_$OutgoingMessage_Result value,
           $Res Function(_$OutgoingMessage_Result) then) =
       __$$OutgoingMessage_ResultCopyWithImpl<$Res>;
+  @useResult
   $Res call({String encoded});
 }
 
 /// @nodoc
 class __$$OutgoingMessage_ResultCopyWithImpl<$Res>
-    extends _$OutgoingMessageCopyWithImpl<$Res>
+    extends _$OutgoingMessageCopyWithImpl<$Res, _$OutgoingMessage_Result>
     implements _$$OutgoingMessage_ResultCopyWith<$Res> {
   __$$OutgoingMessage_ResultCopyWithImpl(_$OutgoingMessage_Result _value,
       $Res Function(_$OutgoingMessage_Result) _then)
-      : super(_value, (v) => _then(v as _$OutgoingMessage_Result));
+      : super(_value, _then);
 
-  @override
-  _$OutgoingMessage_Result get _value =>
-      super._value as _$OutgoingMessage_Result;
-
+  @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? encoded = freezed,
+    Object? encoded = null,
   }) {
     return _then(_$OutgoingMessage_Result(
-      encoded: encoded == freezed
+      encoded: null == encoded
           ? _value.encoded
           : encoded // ignore: cast_nullable_to_non_nullable
               as String,
@@ -1607,15 +1588,15 @@ class _$OutgoingMessage_Result implements OutgoingMessage_Result {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$OutgoingMessage_Result &&
-            const DeepCollectionEquality().equals(other.encoded, encoded));
+            (identical(other.encoded, encoded) || other.encoded == encoded));
   }
 
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, const DeepCollectionEquality().hash(encoded));
+  int get hashCode => Object.hash(runtimeType, encoded);
 
   @JsonKey(ignore: true)
   @override
+  @pragma('vm:prefer-inline')
   _$$OutgoingMessage_ResultCopyWith<_$OutgoingMessage_Result> get copyWith =>
       __$$OutgoingMessage_ResultCopyWithImpl<_$OutgoingMessage_Result>(
           this, _$identity);
@@ -1636,12 +1617,12 @@ class _$OutgoingMessage_Result implements OutgoingMessage_Result {
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult Function()? start,
-    TResult Function()? ready,
-    TResult Function(ErrCode code, String message)? issue,
-    TResult Function(String packet)? communication,
-    TResult Function(String encoded)? result,
-    TResult Function()? close,
+    TResult? Function()? start,
+    TResult? Function()? ready,
+    TResult? Function(ErrCode code, String message)? issue,
+    TResult? Function(String packet)? communication,
+    TResult? Function(String encoded)? result,
+    TResult? Function()? close,
   }) {
     return result?.call(encoded);
   }
@@ -1680,12 +1661,12 @@ class _$OutgoingMessage_Result implements OutgoingMessage_Result {
   @override
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
-    TResult Function(OutgoingMessage_Start value)? start,
-    TResult Function(OutgoingMessage_Ready value)? ready,
-    TResult Function(OutgoingMessage_Issue value)? issue,
-    TResult Function(OutgoingMessage_Communication value)? communication,
-    TResult Function(OutgoingMessage_Result value)? result,
-    TResult Function(OutgoingMessage_Close value)? close,
+    TResult? Function(OutgoingMessage_Start value)? start,
+    TResult? Function(OutgoingMessage_Ready value)? ready,
+    TResult? Function(OutgoingMessage_Issue value)? issue,
+    TResult? Function(OutgoingMessage_Communication value)? communication,
+    TResult? Function(OutgoingMessage_Result value)? result,
+    TResult? Function(OutgoingMessage_Close value)? close,
   }) {
     return result?.call(this);
   }
@@ -1727,14 +1708,11 @@ abstract class _$$OutgoingMessage_CloseCopyWith<$Res> {
 
 /// @nodoc
 class __$$OutgoingMessage_CloseCopyWithImpl<$Res>
-    extends _$OutgoingMessageCopyWithImpl<$Res>
+    extends _$OutgoingMessageCopyWithImpl<$Res, _$OutgoingMessage_Close>
     implements _$$OutgoingMessage_CloseCopyWith<$Res> {
   __$$OutgoingMessage_CloseCopyWithImpl(_$OutgoingMessage_Close _value,
       $Res Function(_$OutgoingMessage_Close) _then)
-      : super(_value, (v) => _then(v as _$OutgoingMessage_Close));
-
-  @override
-  _$OutgoingMessage_Close get _value => super._value as _$OutgoingMessage_Close;
+      : super(_value, _then);
 }
 
 /// @nodoc
@@ -1772,12 +1750,12 @@ class _$OutgoingMessage_Close implements OutgoingMessage_Close {
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult Function()? start,
-    TResult Function()? ready,
-    TResult Function(ErrCode code, String message)? issue,
-    TResult Function(String packet)? communication,
-    TResult Function(String encoded)? result,
-    TResult Function()? close,
+    TResult? Function()? start,
+    TResult? Function()? ready,
+    TResult? Function(ErrCode code, String message)? issue,
+    TResult? Function(String packet)? communication,
+    TResult? Function(String encoded)? result,
+    TResult? Function()? close,
   }) {
     return close?.call();
   }
@@ -1816,12 +1794,12 @@ class _$OutgoingMessage_Close implements OutgoingMessage_Close {
   @override
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
-    TResult Function(OutgoingMessage_Start value)? start,
-    TResult Function(OutgoingMessage_Ready value)? ready,
-    TResult Function(OutgoingMessage_Issue value)? issue,
-    TResult Function(OutgoingMessage_Communication value)? communication,
-    TResult Function(OutgoingMessage_Result value)? result,
-    TResult Function(OutgoingMessage_Close value)? close,
+    TResult? Function(OutgoingMessage_Start value)? start,
+    TResult? Function(OutgoingMessage_Ready value)? ready,
+    TResult? Function(OutgoingMessage_Issue value)? issue,
+    TResult? Function(OutgoingMessage_Communication value)? communication,
+    TResult? Function(OutgoingMessage_Result value)? result,
+    TResult? Function(OutgoingMessage_Close value)? close,
   }) {
     return close?.call(this);
   }
@@ -1860,8 +1838,8 @@ mixin _$TookeyScenarios {
       throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult Function(int index, int parties, int threashold)? keygenEcdsa,
-    TResult Function(Uint16List parties, String key, String hash)? signEcdsa,
+    TResult? Function(int index, int parties, int threashold)? keygenEcdsa,
+    TResult? Function(Uint16List parties, String key, String hash)? signEcdsa,
   }) =>
       throw _privateConstructorUsedError;
   @optionalTypeArgs
@@ -1879,8 +1857,8 @@ mixin _$TookeyScenarios {
       throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
-    TResult Function(TookeyScenarios_KeygenECDSA value)? keygenEcdsa,
-    TResult Function(TookeyScenarios_SignECDSA value)? signEcdsa,
+    TResult? Function(TookeyScenarios_KeygenECDSA value)? keygenEcdsa,
+    TResult? Function(TookeyScenarios_SignECDSA value)? signEcdsa,
   }) =>
       throw _privateConstructorUsedError;
   @optionalTypeArgs
@@ -1896,17 +1874,18 @@ mixin _$TookeyScenarios {
 abstract class $TookeyScenariosCopyWith<$Res> {
   factory $TookeyScenariosCopyWith(
           TookeyScenarios value, $Res Function(TookeyScenarios) then) =
-      _$TookeyScenariosCopyWithImpl<$Res>;
+      _$TookeyScenariosCopyWithImpl<$Res, TookeyScenarios>;
 }
 
 /// @nodoc
-class _$TookeyScenariosCopyWithImpl<$Res>
+class _$TookeyScenariosCopyWithImpl<$Res, $Val extends TookeyScenarios>
     implements $TookeyScenariosCopyWith<$Res> {
   _$TookeyScenariosCopyWithImpl(this._value, this._then);
 
-  final TookeyScenarios _value;
   // ignore: unused_field
-  final $Res Function(TookeyScenarios) _then;
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
 }
 
 /// @nodoc
@@ -1915,38 +1894,36 @@ abstract class _$$TookeyScenarios_KeygenECDSACopyWith<$Res> {
           _$TookeyScenarios_KeygenECDSA value,
           $Res Function(_$TookeyScenarios_KeygenECDSA) then) =
       __$$TookeyScenarios_KeygenECDSACopyWithImpl<$Res>;
+  @useResult
   $Res call({int index, int parties, int threashold});
 }
 
 /// @nodoc
 class __$$TookeyScenarios_KeygenECDSACopyWithImpl<$Res>
-    extends _$TookeyScenariosCopyWithImpl<$Res>
+    extends _$TookeyScenariosCopyWithImpl<$Res, _$TookeyScenarios_KeygenECDSA>
     implements _$$TookeyScenarios_KeygenECDSACopyWith<$Res> {
   __$$TookeyScenarios_KeygenECDSACopyWithImpl(
       _$TookeyScenarios_KeygenECDSA _value,
       $Res Function(_$TookeyScenarios_KeygenECDSA) _then)
-      : super(_value, (v) => _then(v as _$TookeyScenarios_KeygenECDSA));
+      : super(_value, _then);
 
-  @override
-  _$TookeyScenarios_KeygenECDSA get _value =>
-      super._value as _$TookeyScenarios_KeygenECDSA;
-
+  @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? index = freezed,
-    Object? parties = freezed,
-    Object? threashold = freezed,
+    Object? index = null,
+    Object? parties = null,
+    Object? threashold = null,
   }) {
     return _then(_$TookeyScenarios_KeygenECDSA(
-      index: index == freezed
+      index: null == index
           ? _value.index
           : index // ignore: cast_nullable_to_non_nullable
               as int,
-      parties: parties == freezed
+      parties: null == parties
           ? _value.parties
           : parties // ignore: cast_nullable_to_non_nullable
               as int,
-      threashold: threashold == freezed
+      threashold: null == threashold
           ? _value.threashold
           : threashold // ignore: cast_nullable_to_non_nullable
               as int,
@@ -1977,21 +1954,18 @@ class _$TookeyScenarios_KeygenECDSA implements TookeyScenarios_KeygenECDSA {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$TookeyScenarios_KeygenECDSA &&
-            const DeepCollectionEquality().equals(other.index, index) &&
-            const DeepCollectionEquality().equals(other.parties, parties) &&
-            const DeepCollectionEquality()
-                .equals(other.threashold, threashold));
+            (identical(other.index, index) || other.index == index) &&
+            (identical(other.parties, parties) || other.parties == parties) &&
+            (identical(other.threashold, threashold) ||
+                other.threashold == threashold));
   }
 
   @override
-  int get hashCode => Object.hash(
-      runtimeType,
-      const DeepCollectionEquality().hash(index),
-      const DeepCollectionEquality().hash(parties),
-      const DeepCollectionEquality().hash(threashold));
+  int get hashCode => Object.hash(runtimeType, index, parties, threashold);
 
   @JsonKey(ignore: true)
   @override
+  @pragma('vm:prefer-inline')
   _$$TookeyScenarios_KeygenECDSACopyWith<_$TookeyScenarios_KeygenECDSA>
       get copyWith => __$$TookeyScenarios_KeygenECDSACopyWithImpl<
           _$TookeyScenarios_KeygenECDSA>(this, _$identity);
@@ -2010,8 +1984,8 @@ class _$TookeyScenarios_KeygenECDSA implements TookeyScenarios_KeygenECDSA {
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult Function(int index, int parties, int threashold)? keygenEcdsa,
-    TResult Function(Uint16List parties, String key, String hash)? signEcdsa,
+    TResult? Function(int index, int parties, int threashold)? keygenEcdsa,
+    TResult? Function(Uint16List parties, String key, String hash)? signEcdsa,
   }) {
     return keygenEcdsa?.call(index, parties, threashold);
   }
@@ -2041,8 +2015,8 @@ class _$TookeyScenarios_KeygenECDSA implements TookeyScenarios_KeygenECDSA {
   @override
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
-    TResult Function(TookeyScenarios_KeygenECDSA value)? keygenEcdsa,
-    TResult Function(TookeyScenarios_SignECDSA value)? signEcdsa,
+    TResult? Function(TookeyScenarios_KeygenECDSA value)? keygenEcdsa,
+    TResult? Function(TookeyScenarios_SignECDSA value)? signEcdsa,
   }) {
     return keygenEcdsa?.call(this);
   }
@@ -2081,37 +2055,35 @@ abstract class _$$TookeyScenarios_SignECDSACopyWith<$Res> {
           _$TookeyScenarios_SignECDSA value,
           $Res Function(_$TookeyScenarios_SignECDSA) then) =
       __$$TookeyScenarios_SignECDSACopyWithImpl<$Res>;
+  @useResult
   $Res call({Uint16List parties, String key, String hash});
 }
 
 /// @nodoc
 class __$$TookeyScenarios_SignECDSACopyWithImpl<$Res>
-    extends _$TookeyScenariosCopyWithImpl<$Res>
+    extends _$TookeyScenariosCopyWithImpl<$Res, _$TookeyScenarios_SignECDSA>
     implements _$$TookeyScenarios_SignECDSACopyWith<$Res> {
   __$$TookeyScenarios_SignECDSACopyWithImpl(_$TookeyScenarios_SignECDSA _value,
       $Res Function(_$TookeyScenarios_SignECDSA) _then)
-      : super(_value, (v) => _then(v as _$TookeyScenarios_SignECDSA));
+      : super(_value, _then);
 
-  @override
-  _$TookeyScenarios_SignECDSA get _value =>
-      super._value as _$TookeyScenarios_SignECDSA;
-
+  @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? parties = freezed,
-    Object? key = freezed,
-    Object? hash = freezed,
+    Object? parties = null,
+    Object? key = null,
+    Object? hash = null,
   }) {
     return _then(_$TookeyScenarios_SignECDSA(
-      parties: parties == freezed
+      parties: null == parties
           ? _value.parties
           : parties // ignore: cast_nullable_to_non_nullable
               as Uint16List,
-      key: key == freezed
+      key: null == key
           ? _value.key
           : key // ignore: cast_nullable_to_non_nullable
               as String,
-      hash: hash == freezed
+      hash: null == hash
           ? _value.hash
           : hash // ignore: cast_nullable_to_non_nullable
               as String,
@@ -2143,19 +2115,17 @@ class _$TookeyScenarios_SignECDSA implements TookeyScenarios_SignECDSA {
         (other.runtimeType == runtimeType &&
             other is _$TookeyScenarios_SignECDSA &&
             const DeepCollectionEquality().equals(other.parties, parties) &&
-            const DeepCollectionEquality().equals(other.key, key) &&
-            const DeepCollectionEquality().equals(other.hash, hash));
+            (identical(other.key, key) || other.key == key) &&
+            (identical(other.hash, hash) || other.hash == hash));
   }
 
   @override
   int get hashCode => Object.hash(
-      runtimeType,
-      const DeepCollectionEquality().hash(parties),
-      const DeepCollectionEquality().hash(key),
-      const DeepCollectionEquality().hash(hash));
+      runtimeType, const DeepCollectionEquality().hash(parties), key, hash);
 
   @JsonKey(ignore: true)
   @override
+  @pragma('vm:prefer-inline')
   _$$TookeyScenarios_SignECDSACopyWith<_$TookeyScenarios_SignECDSA>
       get copyWith => __$$TookeyScenarios_SignECDSACopyWithImpl<
           _$TookeyScenarios_SignECDSA>(this, _$identity);
@@ -2174,8 +2144,8 @@ class _$TookeyScenarios_SignECDSA implements TookeyScenarios_SignECDSA {
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult Function(int index, int parties, int threashold)? keygenEcdsa,
-    TResult Function(Uint16List parties, String key, String hash)? signEcdsa,
+    TResult? Function(int index, int parties, int threashold)? keygenEcdsa,
+    TResult? Function(Uint16List parties, String key, String hash)? signEcdsa,
   }) {
     return signEcdsa?.call(parties, key, hash);
   }
@@ -2205,8 +2175,8 @@ class _$TookeyScenarios_SignECDSA implements TookeyScenarios_SignECDSA {
   @override
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
-    TResult Function(TookeyScenarios_KeygenECDSA value)? keygenEcdsa,
-    TResult Function(TookeyScenarios_SignECDSA value)? signEcdsa,
+    TResult? Function(TookeyScenarios_KeygenECDSA value)? keygenEcdsa,
+    TResult? Function(TookeyScenarios_SignECDSA value)? signEcdsa,
   }) {
     return signEcdsa?.call(this);
   }

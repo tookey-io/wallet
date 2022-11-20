@@ -1,17 +1,11 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:developer';
 
-import 'package:flutter_rust_bridge_template/ffi.dart';
-import 'package:flutter_rust_bridge_template/keygen.dart';
-import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter_rust_bridge_template/state.dart';
 import 'package:provider/provider.dart';
 
 import './key_import.dart';
-import './qr_scanner.dart';
 
 enum KeyAddMethod { import, generate }
 
@@ -40,7 +34,7 @@ class _KeysListPageState extends State<KeysListPage> {
                       Navigator.pop(ctx, null);
                     },
                     style: TextButton.styleFrom(
-                      primary: Colors.white,
+                      foregroundColor: Colors.white,
                       backgroundColor: color,
                     ),
                     child: const Text("Ok"))
@@ -86,10 +80,11 @@ class _KeysListPageState extends State<KeysListPage> {
           _execute() async {
             if (name != null) {
               executing = true;
-              keystore.complete(await state.generateKey(name!, description ?? ""));
+              keystore
+                  .complete(await state.generateKey(name!, description ?? ""));
             }
           }
-          
+
           return StatefulBuilder(
               builder: (context, setState) => SimpleDialog(
                     contentPadding: const EdgeInsets.all(20),
@@ -113,7 +108,7 @@ class _KeysListPageState extends State<KeysListPage> {
                                       keystore.completeError("cancel");
                                     },
                                     style: TextButton.styleFrom(
-                                      primary: Colors.white,
+                                      foregroundColor: Colors.white,
                                       backgroundColor:
                                           Theme.of(context).colorScheme.error,
                                     ),
@@ -160,7 +155,7 @@ class _KeysListPageState extends State<KeysListPage> {
   @override
   Widget build(BuildContext context) {
     final ButtonStyle style = TextButton.styleFrom(
-      primary: Theme.of(context).colorScheme.onPrimary,
+      foregroundColor: Theme.of(context).colorScheme.onPrimary,
     );
     return Consumer<AppState>(builder: (context, state, child) {
       return Scaffold(
@@ -215,10 +210,13 @@ class _KeysListPageState extends State<KeysListPage> {
                         key: Key(key.publicKey),
                         leading: const Icon(Icons.key),
                         // title: Text(key.name),
-                        title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text(key.name),
-                          Text(key.publicKey, style: const TextStyle(fontSize: 8))
-                        ]),
+                        title: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(key.name),
+                              Text(key.publicKey,
+                                  style: const TextStyle(fontSize: 8))
+                            ]),
                         onTap: () {
                           state.shareableKey = key.publicKey;
                         },
@@ -230,10 +228,12 @@ class _KeysListPageState extends State<KeysListPage> {
                   .map((id) => ListTile(
                         key: Key(id),
                         leading: const Icon(Icons.key_off),
-                        title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          const Text("Unlinked key"),
-                          Text(id, style: const TextStyle(fontSize: 8))
-                        ]),
+                        title: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text("Unlinked key"),
+                              Text(id, style: const TextStyle(fontSize: 8))
+                            ]),
                         onTap: () {},
                       ))
             ]);
@@ -264,22 +264,6 @@ class _KeysListPageState extends State<KeysListPage> {
           shape: const CircularNotchedRectangle(),
           child: Container(height: 45.0),
         ),
-        floatingActionButton: FloatingActionButton(
-          tooltip: "Scan QR",
-          child: const Icon(Icons.qr_code_scanner),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => QRScanner(
-                        onData: (raw) {
-                          log(raw);
-                        },
-                      )),
-            );
-          },
-        ),
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       );
     });
   }

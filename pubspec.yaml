@@ -50,6 +50,10 @@ dependencies:
   web3dart: ^2.3.5
   mobile_scanner: ^2.0.0
   local_auth: ^2.1.2
+  flutter_dotenv: ^5.0.2
+  appcheck: ^1.0.6
+  uni_links: ^0.5.1
+  fluttertoast: ^8.1.1
 
 dev_dependencies:
   flutter_test:
@@ -75,9 +79,10 @@ flutter:
   uses-material-design: true
 
   # To add assets to your application, add an assets section, like this:
-  # assets:
-  #   - assets/shareable-keystore.json
-  #   - assets/owner-keystore.json
+  assets:
+    - .env
+    - assets/shareable-keystore.json
+    - assets/owner-keystore.json
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

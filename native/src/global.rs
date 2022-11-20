@@ -76,8 +76,7 @@ pub(crate) fn runtime() -> Result<std::sync::RwLockReadGuard<'static, Runtime>> 
 }
 
 pub(crate) fn get_incomings(
-) -> Result<std::sync::MutexGuard<'static, HashMap<u32, Sender<IncomingMessage>>>, anyhow::Error>
-{
+) -> Result<std::sync::MutexGuard<'static, HashMap<u32, Sender<IncomingMessage>>>, anyhow::Error> {
     INCOMING
         .lock()
         .map_err(|e| anyhow!("Failed read incomings map: {}", e))
