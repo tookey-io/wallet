@@ -233,70 +233,66 @@ class _WalletConnectState extends State<WalletConnect> {
     final approvedAddresses = await showDialog<List<String>>(
       context: context,
       builder: (_) {
-        return Consumer<AppState>(builder: (context, state, child) {
-          return SimpleDialog(
-            title: Column(
+        return SimpleDialog(
+          title: Column(
+            children: [
+              if (peerMeta.icons.isNotEmpty)
+                Container(
+                  height: 100,
+                  width: 100,
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Image.network(peerMeta.icons.first),
+                ),
+              Text(peerMeta.name),
+            ],
+          ),
+          contentPadding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+          children: [
+            if (peerMeta.description.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(peerMeta.description),
+              ),
+            if (peerMeta.url.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text('Connection to ${peerMeta.url}'),
+              ),
+            Row(
               children: [
-                if (peerMeta.icons.isNotEmpty)
-                  Container(
-                    height: 100,
-                    width: 100,
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Image.network(peerMeta.icons.first),
+                Expanded(
+                  child: TextButton(
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: Theme.of(context).colorScheme.secondary,
+                    ),
+                    onPressed: () async {
+                      setState(() {
+                        _sessionStore = _client?.sessionStore;
+                      });
+
+                      Navigator.pop(context, [address]);
+                    },
+                    child: const Text('APPROVE'),
                   ),
-                Text(peerMeta.name),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: TextButton(
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: Theme.of(context).colorScheme.secondary,
+                    ),
+                    onPressed: () {
+                      Navigator.pop(context, []);
+                    },
+                    child: const Text('REJECT'),
+                  ),
+                ),
               ],
             ),
-            contentPadding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-            children: [
-              if (peerMeta.description.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Text(peerMeta.description),
-                ),
-              if (peerMeta.url.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Text('Connection to ${peerMeta.url}'),
-                ),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextButton(
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        backgroundColor:
-                            Theme.of(context).colorScheme.secondary,
-                      ),
-                      onPressed: () async {
-                        setState(() {
-                          _sessionStore = _client?.sessionStore;
-                        });
-
-                        Navigator.pop(context, [address]);
-                      },
-                      child: const Text('APPROVE'),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: TextButton(
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        backgroundColor:
-                            Theme.of(context).colorScheme.secondary,
-                      ),
-                      onPressed: () {
-                        Navigator.pop(context, []);
-                      },
-                      child: const Text('REJECT'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          );
-        });
+          ],
+        );
       },
     );
 
