@@ -1,5 +1,4 @@
 import 'dart:developer';
-import 'dart:math' as math;
 import 'ffi.dart';
 
 class ExecutorException implements Exception {

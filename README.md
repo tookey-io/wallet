@@ -31,6 +31,6 @@ to learn how to write and use binding code.
 ```
 TEST_ENV=true
 BACKEND_API_URL=http://localhost
-SIGNER_API_URL=http://localhost:8000
+MANAGER_URL=http://localhost:8000
 TELEGRAM_BOT=tookey_dev_bot
 ```

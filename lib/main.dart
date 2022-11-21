@@ -141,14 +141,8 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     debugPrint('_initialUri ${_initialUri.toString()}');
-    debugPrint('_currentUri?.host ${_currentUri?.host}');
-    debugPrint('_currentUri?.scheme ${_currentUri?.scheme}');
-    debugPrint('_currentUri?.path ${_currentUri?.path}');
     debugPrint('_currentUri ${_currentUri.toString()}');
-
-    if (_err != null) {
-      debugPrint('_err ${_err.toString()}');
-    }
+    if (_err != null) debugPrint('_err ${_err.toString()}');
 
     return MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -166,10 +160,8 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
               state.signin(apiKey);
             }
             return const AuthPage(title: 'Tookey Signer');
-          } else if (state.shareableKey == null) {
-            return const KeysListPage(title: "Keys");
           } else {
-            return WalletConnect();
+            return const KeysListPage(title: "Keys");
           }
         }));
   }

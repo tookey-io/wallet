@@ -4,14 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-import '../ffi.dart';
 import '../sign.dart';
 
 class MyHomePage extends StatefulWidget {
   MyHomePage({Key? key, required this.title}) : super(key: key);
 
-  final String signerApiUrl =
-      dotenv.env['SIGNER_API_URL'] ?? "http://10.0.2.2:8000";
+  final String managerUrl = dotenv.env['MANAGER_URL'] ?? "http://10.0.2.2:8000";
 
   // This widget is the home page of your application. It is stateful, meaning
   // that it has a State object (defined below) that contains fields that affect
@@ -37,7 +35,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> signOnline(String hash) async {
     signer = Signer.create(
-        widget.signerApiUrl,
+        widget.managerUrl,
         await rootBundle.loadString("assets/shareable-keystore.json"),
         "default-signing");
 

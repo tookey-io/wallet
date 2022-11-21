@@ -4,6 +4,7 @@ import 'dart:core';
 import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_rust_bridge_template/sign.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
@@ -93,8 +94,7 @@ class AppState extends ChangeNotifier {
   String? _ownerKey;
   final Set<String> _secretKeys = {};
   final HashMap<String, KeyRecord> _knownKeys = HashMap();
-  final String signerApiUrl =
-      dotenv.env['SIGNER_API_URL'] ?? "http://10.0.2.2:8000";
+  final String managerUrl = dotenv.env['MANAGER_URL'] ?? "http://10.0.2.2:8000";
   final String backendApiUrl =
       dotenv.env['BACKEND_API_URL'] ?? "http://10.0.2.2:9001";
 
@@ -184,51 +184,45 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  addKey(String publicKey, String shareable, String admin) async {
-    if (publicKey.contains(":")) {
-      throw "Unsupported id with ':' charater";
-    }
+  addKey(String publicKey, String shareableKey, String adminKey) async {
+    if (publicKey.contains(":")) throw "Unsupported id with ':' charater";
+    if (_secretKeys.contains(publicKey)) throw "Duplicate id?!";
 
-    if (!_secretKeys.contains(publicKey)) {
-      _secretKeys.add(publicKey);
-      await _storage.write(key: _keysList(), value: _secretKeys.join(":"));
-      await _storage.write(key: _key(publicKey), value: shareable);
-      await _storage.write(key: _keyAdmin(publicKey), value: admin);
-      await fetchKeys();
-      notifyListeners();
-    } else {
-      throw "Duplicate id?!";
-    }
+    _secretKeys.add(publicKey);
+    await _storage.write(key: _keysList(), value: _secretKeys.join(":"));
+    await _storage.write(key: _key(publicKey), value: shareableKey);
+    await _storage.write(key: _keyAdmin(publicKey), value: adminKey);
+    await fetchKeys();
+    notifyListeners();
 
     return null;
   }
 
-  generateKey(String name, String description) async {
-    if (accessToken == null) {
-      throw "Forbidden! Please authenticate firstly";
-    }
+  generateKey(String? name, String? description) async {
+    if (accessToken == null) throw "Forbidden! Please authenticate firstly";
     // begin process
     final answer = await http.post(Uri.parse("$backendApiUrl/api/keys"),
         body: jsonEncode(<String, dynamic>{
           "participantsThreshold": 2,
           "participantsCount": 3,
           "timeoutSeconds": 60,
-          "name": name,
-          "description": description,
+          "name": name ?? "",
+          "description": description ?? "",
           "tags": ["shareable"]
         }),
         headers: apiHeaders);
 
     if (!answer.ok) {
       log("Status code is ${answer.statusCode}");
+      if (answer.statusCode == 403) {}
       throw answer.body;
     }
 
     final record = jsonDecode(answer.body);
-    final String room = record['roomId'];
+    final String roomId = record['roomId'];
     final shareableKeygenerator =
-        await Keygenerator.create(2, signerApiUrl, room);
-    final adminKeygenerator = await Keygenerator.create(3, signerApiUrl, room);
+        await Keygenerator.create(2, managerUrl, roomId);
+    final adminKeygenerator = await Keygenerator.create(3, managerUrl, roomId);
 
     final results = await Future.wait(
         [shareableKeygenerator.keygen(), adminKeygenerator.keygen()]);
@@ -241,6 +235,35 @@ class AppState extends ChangeNotifier {
     await addKey(key.publicKey, key.shareableKey, key.adminKey);
 
     return key;
+  }
+
+  signKey(String shareableKey, String message, String hash,
+      dynamic metadata) async {
+    if (accessToken == null) throw "Forbidden! Please authenticate firstly";
+
+    final answer = await http.post(Uri.parse("$backendApiUrl/api/sign"),
+        body: jsonEncode(<String, dynamic>{
+          "publicKey": shareableKey,
+          "data": hash,
+          "participantConfirmations": [1, 2],
+          "metadata": metadata,
+        }),
+        headers: apiHeaders);
+
+    if (!answer.ok) {
+      log("Status code is ${answer.statusCode}");
+      if (answer.statusCode == 403) {}
+      throw answer.body;
+    }
+
+    final record = jsonDecode(answer.body);
+
+    final String roomId = record['roomId'];
+    final signer = await Signer.create(managerUrl, shareableKey, roomId);
+    final signature = await signer.sign(hash);
+
+    return api.toEthereumSignature(
+        message: message, signature: signature, chain: 137);
   }
 
   // storeShareableKey(String id, String key) async {
@@ -304,6 +327,7 @@ class AppState extends ChangeNotifier {
         .map((element) => KeyRecord.fromJson(element))
         .toList();
 
+    _knownKeys.clear();
     _knownKeys.addEntries(keys
         .where((key) => key.publicKey != "")
         .map((element) => MapEntry(element.publicKey, element)));

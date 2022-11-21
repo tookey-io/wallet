@@ -20,10 +20,19 @@ class AuthPage extends StatefulWidget {
 class _AuthPageState extends State<AuthPage> {
   @override
   Widget build(BuildContext context) {
+    final ButtonStyle style = TextButton.styleFrom(
+      foregroundColor: Theme.of(context).colorScheme.onPrimary,
+    );
     return Consumer<AppState>(builder: (context, state, child) {
       return Scaffold(
         appBar: AppBar(
           title: Text(widget.title),
+          actions: [
+            TextButton(
+                style: style,
+                onPressed: () {},
+                child: const Icon(Icons.more_horiz_outlined)),
+          ],
         ),
         body: Consumer<AppState>(builder: (context, state, child) {
           return Center(

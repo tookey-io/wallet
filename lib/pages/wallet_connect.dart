@@ -2,30 +2,29 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_rust_bridge_template/ffi.dart';
 import 'package:flutter_rust_bridge_template/pages/qr_scanner.dart';
 import 'package:provider/provider.dart';
 import 'package:wallet_connect/wallet_connect.dart';
 import 'package:web3dart/crypto.dart';
 
-import '../ffi.dart';
 import '../sign.dart';
 import '../state.dart';
 
 class WalletConnect extends StatefulWidget {
-  WalletConnect({Key? key}) : super(key: key);
+  const WalletConnect({Key? key}) : super(key: key);
 
   @override
-  State<StatefulWidget> createState() => _WalletConnectState();
+  State<WalletConnect> createState() => _WalletConnectState();
 }
 
 class _WalletConnectState extends State<WalletConnect> {
   String? _connectionUrl;
-  WCPeerMeta? _peer;
+  WCPeerMeta? _peerMeta;
   WCSession? _session;
-  WCSessionStore? _store;
+  WCSessionStore? _sessionStore;
   Future<AbstractSigner>? signer;
 
   Future<String>? _secret;
@@ -40,8 +39,8 @@ class _WalletConnectState extends State<WalletConnect> {
 
   _connect() {
     setState(() {
-      if (_store != null) {
-        _client?.connectFromSessionStore(_store!);
+      if (_sessionStore != null) {
+        _client?.connectFromSessionStore(_sessionStore!);
       } else {
         _session =
             _connectionUrl != null ? WCSession.from(_connectionUrl!) : null;
@@ -57,7 +56,7 @@ class _WalletConnectState extends State<WalletConnect> {
     _client?.disconnect();
     setState(() {
       _session = null;
-      _store = null;
+      _sessionStore = null;
     });
   }
 
@@ -79,7 +78,7 @@ class _WalletConnectState extends State<WalletConnect> {
     log("onConnect");
     setState(() {
       // _session =
-      _store = _client?.sessionStore;
+      _sessionStore = _client?.sessionStore;
     });
   }
 
@@ -120,30 +119,30 @@ class _WalletConnectState extends State<WalletConnect> {
             children: [
               if (_client!.remotePeerMeta!.icons.isNotEmpty)
                 Container(
-                  height: 100.0,
-                  width: 100.0,
-                  padding: const EdgeInsets.only(bottom: 8.0),
+                  height: 100,
+                  width: 100,
+                  padding: const EdgeInsets.only(bottom: 8),
                   child: Image.network(_client!.remotePeerMeta!.icons.first),
                 ),
               Text(
                 _client!.remotePeerMeta!.name,
                 style: const TextStyle(
                   fontWeight: FontWeight.normal,
-                  fontSize: 20.0,
+                  fontSize: 20,
                 ),
               ),
             ],
           ),
-          contentPadding: const EdgeInsets.fromLTRB(16.0, 12.0, 16.0, 16.0),
+          contentPadding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
           children: [
             Container(
               alignment: Alignment.center,
-              padding: const EdgeInsets.only(bottom: 8.0),
+              padding: const EdgeInsets.only(bottom: 8),
               child: const Text(
                 'Sign Message',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 18.0,
+                  fontSize: 18,
                 ),
               ),
             ),
@@ -151,20 +150,20 @@ class _WalletConnectState extends State<WalletConnect> {
               data:
                   Theme.of(context).copyWith(dividerColor: Colors.transparent),
               child: Padding(
-                padding: const EdgeInsets.only(bottom: 8.0),
+                padding: const EdgeInsets.only(bottom: 8),
                 child: ExpansionTile(
                   tilePadding: EdgeInsets.zero,
                   title: const Text(
                     'Message',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 16.0,
+                      fontSize: 16,
                     ),
                   ),
                   children: [
                     Text(
                       decoded,
-                      style: TextStyle(fontSize: 16.0),
+                      style: const TextStyle(fontSize: 16),
                     ),
                   ],
                 ),
@@ -176,36 +175,36 @@ class _WalletConnectState extends State<WalletConnect> {
                   Expanded(
                     child: TextButton(
                       style: TextButton.styleFrom(
-                        primary: Colors.white,
+                        foregroundColor: Colors.white,
                         backgroundColor:
                             Theme.of(context).colorScheme.secondary,
                       ),
                       onPressed: () async {
-                        String signedDataHex;
                         if (message.type == WCSignType.TYPED_MESSAGE) {
                           throw "not implemented yet";
-                        } else {
-                          final hash =
-                              await api.messageToHash(message: message.data!);
-                          signedDataHex =
-                              await _sign(state, decoded, hash).then((s) => s!);
-
-                          log("Signed Data hex: $signedDataHex");
-
-                          _client?.approveRequest(
-                              id: id, result: signedDataHex);
-
-                          Navigator.pop(context);
                         }
+
+                        String signedDataHex;
+                        final hash =
+                            await api.messageToHash(message: message.data!);
+                        signedDataHex = await _sign(state, message.data!, hash,
+                                _sessionStore?.remotePeerMeta.toJson())
+                            .then((s) => s!);
+
+                        log("Signed Data hex: $signedDataHex");
+
+                        _client?.approveRequest(id: id, result: signedDataHex);
+
+                        Navigator.pop(context);
                       },
                       child: const Text('SIGN'),
                     ),
                   ),
-                  const SizedBox(width: 16.0),
+                  const SizedBox(width: 16),
                   Expanded(
                     child: TextButton(
                       style: TextButton.styleFrom(
-                        primary: Colors.white,
+                        foregroundColor: Colors.white,
                         backgroundColor:
                             Theme.of(context).colorScheme.secondary,
                       ),
@@ -213,7 +212,7 @@ class _WalletConnectState extends State<WalletConnect> {
                         _client?.rejectRequest(id: id);
                         Navigator.pop(context);
                       },
-                      child: Text('REJECT'),
+                      child: const Text('REJECT'),
                     ),
                   ),
                 ],
@@ -234,65 +233,70 @@ class _WalletConnectState extends State<WalletConnect> {
     final approvedAddresses = await showDialog<List<String>>(
       context: context,
       builder: (_) {
-        return SimpleDialog(
-          title: Column(
-            children: [
-              if (peerMeta.icons.isNotEmpty)
-                Container(
-                  height: 100.0,
-                  width: 100.0,
-                  padding: const EdgeInsets.only(bottom: 8.0),
-                  child: Image.network(peerMeta.icons.first),
-                ),
-              Text(peerMeta.name),
-            ],
-          ),
-          contentPadding: const EdgeInsets.fromLTRB(16.0, 12.0, 16.0, 16.0),
-          children: [
-            if (peerMeta.description.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8.0),
-                child: Text(peerMeta.description),
-              ),
-            if (peerMeta.url.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8.0),
-                child: Text('Connection to ${peerMeta.url}'),
-              ),
-            Row(
+        return Consumer<AppState>(builder: (context, state, child) {
+          return SimpleDialog(
+            title: Column(
               children: [
-                Expanded(
-                  child: TextButton(
-                    style: TextButton.styleFrom(
-                      primary: Colors.white,
-                      backgroundColor: Theme.of(context).colorScheme.secondary,
-                    ),
-                    onPressed: () async {
-                      setState(() {
-                        _store = _client?.sessionStore;
-                      });
-                      Navigator.pop(context, [address]);
-                    },
-                    child: const Text('APPROVE'),
+                if (peerMeta.icons.isNotEmpty)
+                  Container(
+                    height: 100,
+                    width: 100,
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Image.network(peerMeta.icons.first),
                   ),
-                ),
-                const SizedBox(width: 16.0),
-                Expanded(
-                  child: TextButton(
-                    style: TextButton.styleFrom(
-                      primary: Colors.white,
-                      backgroundColor: Theme.of(context).colorScheme.secondary,
-                    ),
-                    onPressed: () {
-                      Navigator.pop(context, []);
-                    },
-                    child: const Text('REJECT'),
-                  ),
-                ),
+                Text(peerMeta.name),
               ],
             ),
-          ],
-        );
+            contentPadding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+            children: [
+              if (peerMeta.description.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Text(peerMeta.description),
+                ),
+              if (peerMeta.url.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Text('Connection to ${peerMeta.url}'),
+                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        backgroundColor:
+                            Theme.of(context).colorScheme.secondary,
+                      ),
+                      onPressed: () async {
+                        setState(() {
+                          _sessionStore = _client?.sessionStore;
+                        });
+
+                        Navigator.pop(context, [address]);
+                      },
+                      child: const Text('APPROVE'),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: TextButton(
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        backgroundColor:
+                            Theme.of(context).colorScheme.secondary,
+                      ),
+                      onPressed: () {
+                        Navigator.pop(context, []);
+                      },
+                      child: const Text('REJECT'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          );
+        });
       },
     );
 
@@ -303,7 +307,7 @@ class _WalletConnectState extends State<WalletConnect> {
       );
 
       setState(() {
-        _peer = peerMeta;
+        _peerMeta = peerMeta;
       });
     } else {
       _client?.rejectSession();
@@ -327,100 +331,87 @@ class _WalletConnectState extends State<WalletConnect> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("WalletConnect V1"),
-        // backgroundColor: Colors.transparent,
-        // shadowColor: Colors.transparent,
-        // actions: [
-        // AppBarAction(child: const Icon(Icons.close), onTap: () {}),
-        // ],
-      ),
-      body: Consumer<AppState>(builder: (context, state, child) {
-        _secret ??= state.readShareableKey().then((possibleSecret) {
-          if (possibleSecret == null) {
-            throw "Cannot load secret";
-          }
-          return possibleSecret;
-        });
-
-        return FutureBuilder(
+    return Consumer<AppState>(builder: (context, state, child) {
+      _secret ??= state.readShareableKey().then((possibleSecret) {
+        if (possibleSecret == null) throw "Cannot load secret";
+        return possibleSecret;
+      });
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text("WalletConnect V1"),
+        ),
+        body: FutureBuilder(
             future: _secret,
             builder: (context, snapshot) {
               if (snapshot.hasData) {
                 return Stack(
                   children: [
-                    _session == null
-                        ? Padding(
-                            padding: const EdgeInsets.all(20.0),
-                            child: (Column(
+                    if (_session == null)
+                      Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: (Column(
+                          children: [
+                            const Spacer(flex: 1),
+                            const Icon(Icons.add_link,
+                                size: 48, color: Colors.grey),
+                            const Padding(padding: EdgeInsets.all(10)),
+                            const Text("Wallet connect",
+                                style: TextStyle(
+                                    fontSize: 24, fontWeight: FontWeight.bold)),
+                            const Padding(padding: EdgeInsets.all(5)),
+                            const Text(
+                                "Paste connection url below or use QR scanner"),
+                            const Padding(padding: EdgeInsets.all(10)),
+                            Row(
                               children: [
-                                const Spacer(flex: 1),
-                                const Icon(Icons.add_link,
-                                    size: 48, color: Colors.grey),
-                                const Padding(padding: EdgeInsets.all(10)),
-                                const Text("Wallet connect",
-                                    style: TextStyle(
-                                        fontSize: 24,
-                                        fontWeight: FontWeight.bold)),
-                                const Padding(padding: EdgeInsets.all(5)),
-                                const Text(
-                                    "Paste connection url below or use QR scanner"),
-                                const Padding(padding: EdgeInsets.all(10)),
-                                Row(
-                                  children: [
-                                    Flexible(
-                                        child: TextField(
-                                      decoration: const InputDecoration(
-                                          helperText:
-                                              "Enter connection string"),
-                                      style:
-                                          Theme.of(context).textTheme.bodyText1,
-                                      onChanged: (value) => setState(() {
-                                        _connectionUrl = value;
-                                      }),
-                                    )),
-                                    const SizedBox(width: 10),
-                                    ElevatedButton(
-                                        onPressed: () {
-                                          _connect();
-                                        },
-                                        child: Row(children: const [
-                                          Icon(Icons.cast_connected),
-                                          Text("Connect")
-                                        ])),
-                                  ],
-                                ),
-                                const Spacer(flex: 2),
-                              ],
-                            )),
-                          )
-                        : const Center(
-                            child:
-                                Text("Interaction by WalletConnect protocol")),
-                    _session != null
-                        ? Positioned(
-                            bottom: 0,
-                            left: 0,
-                            right: 0,
-                            child: Padding(
-                                padding: const EdgeInsets.all(40),
-                                child: Center(
-                                  child: FloatingActionButton(
-                                    backgroundColor: Colors.white,
-                                    onPressed: () async {
-                                      _disconnect();
-                                    },
-                                    child: const Icon(
-                                      Icons.exit_to_app,
-                                      color: Colors.blue,
-                                    ),
-                                  ),
+                                Flexible(
+                                    child: TextField(
+                                  decoration: const InputDecoration(
+                                      helperText: "Enter connection string"),
+                                  style: Theme.of(context).textTheme.bodyText1,
+                                  onChanged: (value) => setState(() {
+                                    _connectionUrl = value;
+                                  }),
                                 )),
-                          )
-                        : Column(
-                            children: [],
-                          )
+                                const SizedBox(width: 10),
+                                ElevatedButton(
+                                    onPressed: () {
+                                      _connect();
+                                    },
+                                    child: Row(children: const [
+                                      Icon(Icons.cast_connected),
+                                      Text(" Connect")
+                                    ])),
+                              ],
+                            ),
+                            const Spacer(flex: 2),
+                          ],
+                        )),
+                      )
+                    else ...[
+                      const Center(
+                          child: Text("Interaction by WalletConnect protocol")),
+                      Positioned(
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        child: Padding(
+                            padding: const EdgeInsets.all(40),
+                            child: Center(
+                              child: FloatingActionButton(
+                                heroTag: 'wc-disconnect',
+                                backgroundColor: Colors.white,
+                                onPressed: () async {
+                                  _disconnect();
+                                },
+                                child: const Icon(
+                                  Icons.exit_to_app,
+                                  color: Colors.blue,
+                                ),
+                              ),
+                            )),
+                      )
+                    ]
                   ],
                 );
               } else {
@@ -434,57 +425,53 @@ class _WalletConnectState extends State<WalletConnect> {
                           TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
                 ]));
               }
-            });
-      }),
-      bottomNavigationBar: BottomAppBar(
-        shape: const CircularNotchedRectangle(),
-        child: Container(height: 45.0),
-      ),
-      floatingActionButton: FloatingActionButton(
-        tooltip: "Scan QR",
-        child: const Icon(Icons.qr_code_scanner),
-        onPressed: () {
-          showDialog(
-              context: context,
-              builder: (context) {
-                return SimpleDialog(
-                    contentPadding: const EdgeInsets.all(20),
-                    children: [
-                      SizedBox.expand(child: QRScanner(onData: (raw) {
-                        Navigator.pop(context, raw);
-                      }))
-                    ]);
-              });
-          // Navigator.push(
-          //   context,
-          //   MaterialPageRoute(builder: (context) => QRScanner(onData: (raw) { log(raw); },)),
-          // );
-        },
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-    );
+            }),
+        bottomNavigationBar: BottomAppBar(
+          shape: const CircularNotchedRectangle(),
+          child: Container(height: 45),
+        ),
+        floatingActionButton: FloatingActionButton(
+          heroTag: 'wc-scan',
+          tooltip: "Scan QR",
+          child: const Icon(Icons.qr_code_scanner),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) {
+                return QRScanner(
+                  onData: (value) {
+                    Navigator.pop(context);
+                    setState(() {
+                      _connectionUrl = value;
+                    });
+                    _connect();
+                  },
+                );
+              }),
+            );
+          },
+        ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      );
+    });
   }
 
-  Future<String?> _sign(AppState state, String message, String hash) async {
+  Future<String?> _sign(
+      AppState state, String message, String hash, dynamic metadata) async {
     Completer<String?> signJoinHandle = Completer();
-    _apiSign() async {
-      final keystore = await state.readShareableKey();
 
-      if (keystore == null) {
-        throw "Cannot read the key";
-      }
+    apiSign() async {
+      final shareableKey = await state.readShareableKey();
+      if (shareableKey == null) throw "Cannot read the key";
 
-      log(keystore);
+      log(hash);
+      log(message);
+      log(shareableKey);
 
-      final signer = await Signer.create("http://10.0.2.2:8000", keystore, "test-room");
-
-      final signature = await signer.sign(hash);
-
-      return api.toEthereumSignature(
-          message: message, signature: signature, chain: 137);
+      return state.signKey(shareableKey, message, hash, metadata);
     }
 
-    _apiSign().then((signature) {
+    apiSign().then((signature) {
       signJoinHandle.complete(signature);
     }).catchError((e) {
       signJoinHandle.completeError(e);
@@ -514,7 +501,7 @@ class _WalletConnectState extends State<WalletConnect> {
                           Navigator.pop(context);
                         },
                         style: TextButton.styleFrom(
-                          primary: Colors.white,
+                          foregroundColor: Colors.white,
                           backgroundColor: Theme.of(context).colorScheme.error,
                         ),
                         child: const Text("Cancel"))

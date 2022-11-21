@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_rust_bridge_template/pages/wallet_connect.dart';
 import 'package:flutter_rust_bridge_template/state.dart';
 import 'package:provider/provider.dart';
 
@@ -55,16 +56,10 @@ class _KeysListPageState extends State<KeysListPage> {
     BuildContext? modal;
 
     keystore.future.then((result) {
-      if (modal != null) {
-        Navigator.pop(modal!, result);
-      }
-
+      if (modal != null) Navigator.pop(modal!, result);
       showSuccess("Key is done", result.publicKey);
     }).catchError((error) {
-      if (modal != null) {
-        Navigator.pop(modal!, null);
-      }
-
+      if (modal != null) Navigator.pop(modal!);
       showError(
           "Keygeneration failed", error is String ? error : error.toString());
     });
@@ -77,12 +72,9 @@ class _KeysListPageState extends State<KeysListPage> {
           String? description;
           bool executing = false;
 
-          _execute() async {
-            if (name != null) {
-              executing = true;
-              keystore
-                  .complete(await state.generateKey(name!, description ?? ""));
-            }
+          execute() async {
+            executing = true;
+            keystore.complete(await state.generateKey(name, description));
           }
 
           return StatefulBuilder(
@@ -139,7 +131,7 @@ class _KeysListPageState extends State<KeysListPage> {
                                     onPressed: () {
                                       setState(() {
                                         log("Name: $name, Desc: $description");
-                                        _execute();
+                                        execute();
                                       });
                                     },
                                     child: const Text("Create"))
@@ -209,7 +201,6 @@ class _KeysListPageState extends State<KeysListPage> {
                   .map((key) => ListTile(
                         key: Key(key.publicKey),
                         leading: const Icon(Icons.key),
-                        // title: Text(key.name),
                         title: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -219,6 +210,10 @@ class _KeysListPageState extends State<KeysListPage> {
                             ]),
                         onTap: () {
                           state.shareableKey = key.publicKey;
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => const WalletConnect()));
                         },
                       ))
                   .toList(),
@@ -249,12 +244,7 @@ class _KeysListPageState extends State<KeysListPage> {
                         TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
                 Padding(padding: EdgeInsets.all(5)),
                 Text("Consider to generate new one or import existed"),
-                Spacer(flex: 2),
-                Text(
-                  "or use scan QR \nwith connection code",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(height: 1.3, color: Colors.grey),
-                ),
+                Spacer(),
                 SizedBox(height: 40)
               ],
             ));

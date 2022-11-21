@@ -2,13 +2,9 @@ import 'dart:convert';
 import 'dart:developer';
 
 import 'package:http/http.dart' as http;
-import 'package:path/path.dart';
-import 'package:universal_html/html.dart' as html;
 
 import 'dart:async';
 
-import 'package:meta/meta.dart';
-import 'package:universal_html/html.dart' as html;
 import 'package:path/path.dart' as path;
 import 'package:sse_client/sse_client.dart';
 
@@ -21,7 +17,7 @@ class UniqueIdx {
   final int _idx;
   UniqueIdx(this._idx);
 
-    int get id => _idx;
+  int get id => _idx;
 
   UniqueIdx.fromJson(Map<String, dynamic> json) : _idx = json['unique_idx'];
 }

@@ -1,9 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
-import 'dart:typed_data';
 
-import 'package:flutter/material.dart';
 import 'package:flutter_rust_bridge_template/client.dart';
 import 'package:flutter_rust_bridge_template/executor.dart';
 import 'ffi.dart';
@@ -15,9 +13,9 @@ class Keygenerator {
   Keygenerator._internal(this.index, this.executor, this.client);
 
   static Future<Keygenerator> create(
-      int index, String relayUrl, String roomId) async {
+      int index, String managerUrl, String roomId) async {
     var executor = await Executor.create();
-    var client = await RoomClient.connect(relayUrl, roomId);
+    var client = await RoomClient.connect(managerUrl, roomId);
     return Keygenerator._internal(index, executor, client);
   }
 
@@ -39,15 +37,14 @@ class Keygenerator {
                 index: index, parties: 3, threashold: 1)));
 
         client.messages.listen((event) async {
-          if (key.isCompleted) {
-            throw "key is ready";
-          }
+          if (key.isCompleted) throw "key is ready";
 
           var json = jsonDecode(event);
           var sender = jsonDecode(event)["sender"];
           var receiver = jsonDecode(event)["receiver"];
           log("${client.id} receives ${json['body'].keys.join(" ")} from ${sender.toString()}");
-          if (sender == client.id || (receiver != null && receiver != client.id)) {
+          if (sender == client.id ||
+              (receiver != null && receiver != client.id)) {
             log("ignore my message");
           } else {
             await executor.send(IncomingMessage.communication(packet: event));
