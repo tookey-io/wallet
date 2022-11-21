@@ -170,50 +170,55 @@ class _WalletConnectState extends State<WalletConnect> {
                 ),
               ),
             ),
-            Row(
-              children: [
-                Expanded(
-                  child: TextButton(
-                    style: TextButton.styleFrom(
-                      primary: Colors.white,
-                      backgroundColor: Theme.of(context).colorScheme.secondary,
+            Consumer<AppState>(builder: (context, state, child) {
+              return Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      style: TextButton.styleFrom(
+                        primary: Colors.white,
+                        backgroundColor:
+                            Theme.of(context).colorScheme.secondary,
+                      ),
+                      onPressed: () async {
+                        String signedDataHex;
+                        if (message.type == WCSignType.TYPED_MESSAGE) {
+                          throw "not implemented yet";
+                        } else {
+                          final hash =
+                              await api.messageToHash(message: message.data!);
+                          signedDataHex =
+                              await _sign(state, decoded, hash).then((s) => s!);
+
+                          log("Signed Data hex: $signedDataHex");
+
+                          _client?.approveRequest(
+                              id: id, result: signedDataHex);
+
+                          Navigator.pop(context);
+                        }
+                      },
+                      child: const Text('SIGN'),
                     ),
-                    onPressed: () async {
-                      String signedDataHex;
-                      if (message.type == WCSignType.TYPED_MESSAGE) {
-                        throw "not implemented yet";
-                      } else {
-                        final hash =
-                            await api.messageToHash(message: message.data!);
-                        signedDataHex =
-                            await _sign(decoded, hash).then((s) => s!);
-
-                        log("Signed Data hex: $signedDataHex");
-
-                        _client?.approveRequest(id: id, result: signedDataHex);
-
+                  ),
+                  const SizedBox(width: 16.0),
+                  Expanded(
+                    child: TextButton(
+                      style: TextButton.styleFrom(
+                        primary: Colors.white,
+                        backgroundColor:
+                            Theme.of(context).colorScheme.secondary,
+                      ),
+                      onPressed: () {
+                        _client?.rejectRequest(id: id);
                         Navigator.pop(context);
-                      }
-                    },
-                    child: const Text('SIGN'),
-                  ),
-                ),
-                const SizedBox(width: 16.0),
-                Expanded(
-                  child: TextButton(
-                    style: TextButton.styleFrom(
-                      primary: Colors.white,
-                      backgroundColor: Theme.of(context).colorScheme.secondary,
+                      },
+                      child: Text('REJECT'),
                     ),
-                    onPressed: () {
-                      _client?.rejectRequest(id: id);
-                      Navigator.pop(context);
-                    },
-                    child: Text('REJECT'),
                   ),
-                ),
-              ],
-            ),
+                ],
+              );
+            }),
           ],
         );
       },
@@ -460,13 +465,20 @@ class _WalletConnectState extends State<WalletConnect> {
     );
   }
 
-  Future<String?> _sign(String message, String hash) async {
+  Future<String?> _sign(AppState state, String message, String hash) async {
     Completer<String?> signJoinHandle = Completer();
     _apiSign() async {
-      final signature = await OfflineSigner.create(
-              await rootBundle.loadString("assets/owner-keystore.json"),
-              await rootBundle.loadString("assets/shareable-keystore.json"))
-          .then((signer) => signer.sign(hash));
+      final keystore = await state.readShareableKey();
+
+      if (keystore == null) {
+        throw "Cannot read the key";
+      }
+
+      log(keystore);
+
+      final signer = await Signer.create("http://10.0.2.2:8000", keystore, "test-room");
+
+      final signature = await signer.sign(hash);
 
       return api.toEthereumSignature(
           message: message, signature: signature, chain: 137);

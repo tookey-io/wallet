@@ -123,7 +123,7 @@ class Signer extends AbstractSigner {
       if (outgoing is OutgoingMessage_Ready) {
         await executor.send(IncomingMessage_Begin(
             scenario: TookeyScenarios.signEcdsa(
-                parties: Uint16List.fromList([2, 1]),
+                parties: Uint16List.fromList([1, 2]),
                 key: key,
                 hash: hash)));
       }
