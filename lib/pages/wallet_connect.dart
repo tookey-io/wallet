@@ -99,9 +99,114 @@ class _WalletConnectState extends State<WalletConnect> {
     // Respond to eth_signTransaction request callback
   }
 
-  void _onEthSendTransaction(id, tx) {
+  void _onEthSendTransaction(int id, WCEthereumTransaction tx) {
     log("onEthSendTransaction: $id, $tx");
     // Respond to eth_sendTransaction request callback
+
+    showDialog(
+      context: context,
+      builder: (_) {
+        return SimpleDialog(
+          title: Column(
+            children: [
+              if (_client!.remotePeerMeta!.icons.isNotEmpty)
+                Container(
+                  height: 100,
+                  width: 100,
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Image.network(_client!.remotePeerMeta!.icons.first),
+                ),
+              Text(
+                _client!.remotePeerMeta!.name,
+                style: const TextStyle(
+                  fontWeight: FontWeight.normal,
+                  fontSize: 20,
+                ),
+              ),
+            ],
+          ),
+          contentPadding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+          children: [
+            Container(
+              alignment: Alignment.center,
+              padding: const EdgeInsets.only(bottom: 8),
+              child: const Text(
+                'Sign Message',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+            ),
+            Theme(
+              data:
+                  Theme.of(context).copyWith(dividerColor: Colors.transparent),
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: ExpansionTile(
+                  tilePadding: EdgeInsets.zero,
+                  title: const Text(
+                    'Message',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                  children: [
+                    Text(
+                      tx.data!,
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Consumer<AppState>(builder: (context, state, child) {
+              return Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        backgroundColor:
+                            Theme.of(context).colorScheme.secondary,
+                      ),
+                      onPressed: () async {
+                        Navigator.pop(context);
+
+                        await _sign(state, tx.data!,
+                                _sessionStore?.remotePeerMeta.toJson())
+                            .then((signedDataHex) {
+                          log("Signed Data hex: $signedDataHex");
+                          _client?.approveRequest(
+                              id: id, result: signedDataHex);
+                        });
+                      },
+                      child: const Text('SIGN'),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: TextButton(
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        backgroundColor:
+                            Theme.of(context).colorScheme.secondary,
+                      ),
+                      onPressed: () {
+                        _client?.rejectRequest(id: id);
+                        Navigator.pop(context);
+                      },
+                      child: const Text('REJECT'),
+                    ),
+                  ),
+                ],
+              );
+            }),
+          ],
+        );
+      },
+    );
   }
 
   void _onEthSign(dynamic id, WCEthereumSignMessage message) async {
@@ -185,9 +290,7 @@ class _WalletConnectState extends State<WalletConnect> {
                         }
 
                         String signedDataHex;
-                        final hash =
-                            await api.messageToHash(message: message.data!);
-                        signedDataHex = await _sign(state, message.data!, hash,
+                        signedDataHex = await _sign(state, message.data!,
                                 _sessionStore?.remotePeerMeta.toJson())
                             .then((s) => s!);
 
@@ -299,7 +402,7 @@ class _WalletConnectState extends State<WalletConnect> {
     if (approvedAddresses != null) {
       _client?.approveSession(
         accounts: approvedAddresses,
-        chainId: 137,
+        chainId: 97,
       );
 
       setState(() {
@@ -453,18 +556,11 @@ class _WalletConnectState extends State<WalletConnect> {
   }
 
   Future<String?> _sign(
-      AppState state, String message, String hash, dynamic metadata) async {
+      AppState state, String message, dynamic metadata) async {
     Completer<String?> signJoinHandle = Completer();
-
     apiSign() async {
-      final shareableKey = await state.readShareableKey();
-      if (shareableKey == null) throw "Cannot read the key";
-
-      log(hash);
-      log(message);
-      log(shareableKey);
-
-      return state.signKey(shareableKey, message, hash, metadata);
+      final hash = await api.messageToHash(message: message);
+      return state.signKey(message, hash, metadata);
     }
 
     apiSign().then((signature) {
@@ -473,7 +569,7 @@ class _WalletConnectState extends State<WalletConnect> {
       signJoinHandle.completeError(e);
     });
 
-    return showDialog<String>(
+    showDialog<String>(
         context: context,
         builder: (_) {
           signJoinHandle.future
@@ -494,7 +590,7 @@ class _WalletConnectState extends State<WalletConnect> {
                     const SizedBox(height: 25),
                     TextButton(
                         onPressed: () async {
-                          Navigator.pop(context);
+                          signJoinHandle.completeError("cancel");
                         },
                         style: TextButton.styleFrom(
                           foregroundColor: Colors.white,
@@ -505,5 +601,43 @@ class _WalletConnectState extends State<WalletConnect> {
                 ),
               ]);
         });
+
+    return signJoinHandle.future;
+  }
+
+  showModal(String title, String text, Color color) {
+    showDialog(
+        context: context,
+        builder: (ctx) => SimpleDialog(
+              contentPadding: const EdgeInsets.all(20),
+              children: [
+                const SizedBox(height: 20),
+                Icon(Icons.check, color: color),
+                const SizedBox(height: 15),
+                Text(title,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 18)),
+                const SizedBox(height: 15),
+                Text(text, style: const TextStyle(fontSize: 14)),
+                const SizedBox(height: 25),
+                TextButton(
+                    onPressed: () async {
+                      Navigator.pop(ctx, null);
+                    },
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: color,
+                    ),
+                    child: const Text("Ok"))
+              ],
+            ));
+  }
+
+  showSuccess(String title, String text) {
+    showModal(title, text, Colors.greenAccent);
+  }
+
+  showError(String title, String text) {
+    showModal(title, text, Colors.redAccent);
   }
 }

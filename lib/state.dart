@@ -237,15 +237,14 @@ class AppState extends ChangeNotifier {
     return key;
   }
 
-  signKey(String shareableKey, String message, String hash,
-      dynamic metadata) async {
+  signKey(String message, String hash, dynamic metadata) async {
     if (accessToken == null) throw "Forbidden! Please authenticate firstly";
 
-    final answer = await http.post(Uri.parse("$backendApiUrl/api/sign"),
+    final answer = await http.post(Uri.parse("$backendApiUrl/api/keys/sign"),
         body: jsonEncode(<String, dynamic>{
-          "publicKey": shareableKey,
+          "publicKey": shareableKey!,
           "data": hash,
-          "participantConfirmations": [1, 2],
+          "participantsConfirmations": [1, 2],
           "metadata": metadata,
         }),
         headers: apiHeaders);
@@ -259,7 +258,8 @@ class AppState extends ChangeNotifier {
     final record = jsonDecode(answer.body);
 
     final String roomId = record['roomId'];
-    final signer = await Signer.create(managerUrl, shareableKey, roomId);
+    final localShare = await readShareableKey();
+    final signer = await Signer.create(managerUrl, localShare!, roomId);
     final signature = await signer.sign(hash);
 
     return api.toEthereumSignature(
