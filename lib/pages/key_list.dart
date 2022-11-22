@@ -2,11 +2,11 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_rust_bridge_template/pages/wallet_connect.dart';
-import 'package:flutter_rust_bridge_template/state.dart';
 import 'package:provider/provider.dart';
 
-import './key_import.dart';
+import 'package:tookey/pages/key_import.dart';
+import 'package:tookey/services/wallet_connect/wallet_connect.dart';
+import 'package:tookey/state.dart';
 
 enum KeyAddMethod { import, generate }
 

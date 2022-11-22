@@ -4,9 +4,10 @@ import 'dart:developer';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_rust_bridge_template/client.dart';
-import 'package:flutter_rust_bridge_template/executor.dart';
-import 'ffi.dart';
+
+import 'package:tookey/ffi.dart';
+import 'package:tookey/services/room_client.dart';
+import 'package:tookey/services/executor.dart';
 
 abstract class AbstractSigner {
   final String key;
@@ -46,6 +47,10 @@ class OfflineSigner extends AbstractSigner {
     await signer.initialize();
 
     return signer;
+  }
+
+  static Future<String> getEthereumAddress(String key) async {
+    return await api.toEthereumAddress(key: key);
   }
 
   @override
@@ -123,9 +128,7 @@ class Signer extends AbstractSigner {
       if (outgoing is OutgoingMessage_Ready) {
         await executor.send(IncomingMessage_Begin(
             scenario: TookeyScenarios.signEcdsa(
-                parties: Uint16List.fromList([1, 2]),
-                key: key,
-                hash: hash)));
+                parties: Uint16List.fromList([1, 2]), key: key, hash: hash)));
       }
 
       if (outgoing is OutgoingMessage_Communication) {

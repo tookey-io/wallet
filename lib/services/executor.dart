@@ -1,5 +1,6 @@
 import 'dart:developer';
-import 'ffi.dart';
+
+import 'package:tookey/ffi.dart';
 
 class ExecutorException implements Exception {
   String message;

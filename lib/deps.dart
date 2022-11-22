@@ -13,8 +13,6 @@ DynamicLibrary loadLibrary(String base) {
   return io.Platform.isIOS || io.Platform.isMacOS
       ? DynamicLibrary.executable()
       : DynamicLibrary.open(dylib);
-
-    
 }
 
 typedef __gmpz_add_ui = Pointer<NativeType> Function(Pointer<NativeType> a, Pointer<NativeType> b);

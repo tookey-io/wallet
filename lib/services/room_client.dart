@@ -1,10 +1,8 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
 
 import 'package:http/http.dart' as http;
-
-import 'dart:async';
-
 import 'package:path/path.dart' as path;
 import 'package:sse_client/sse_client.dart';
 

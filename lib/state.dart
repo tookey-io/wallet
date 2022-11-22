@@ -2,14 +2,15 @@ import 'dart:collection';
 import 'dart:convert';
 import 'dart:core';
 import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:flutter_rust_bridge_template/sign.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
-import 'ffi.dart';
-import 'keygen.dart';
+import 'package:tookey/ffi.dart';
+import 'package:tookey/services/keygen.dart';
+import 'package:tookey/services/signer.dart';
 
 _keysList() => "storage:KEYS";
 _key(String id) => "storage:KEY:$id";
@@ -168,7 +169,7 @@ class AppState extends ChangeNotifier {
     return list;
   }
 
-  _loadStorage() async {
+  Future<void> _loadStorage() async {
     var refreshTokenString = await _storage.read(key: _refreshTokenStorage());
     if (refreshTokenString != null) {
       refreshToken = AuthToken.fromJson(jsonDecode(refreshTokenString));
@@ -184,7 +185,8 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  addKey(String publicKey, String shareableKey, String adminKey) async {
+  Future<void> addKey(
+      String publicKey, String shareableKey, String adminKey) async {
     if (publicKey.contains(":")) throw "Unsupported id with ':' charater";
     if (_secretKeys.contains(publicKey)) throw "Duplicate id?!";
 
@@ -195,10 +197,10 @@ class AppState extends ChangeNotifier {
     await fetchKeys();
     notifyListeners();
 
-    return null;
+    return;
   }
 
-  generateKey(String? name, String? description) async {
+  Future<Keystore> generateKey(String? name, String? description) async {
     if (accessToken == null) throw "Forbidden! Please authenticate firstly";
     // begin process
     final answer = await http.post(Uri.parse("$backendApiUrl/api/keys"),
@@ -237,7 +239,11 @@ class AppState extends ChangeNotifier {
     return key;
   }
 
-  signKey(String message, String hash, dynamic metadata) async {
+  Future<String> signKey(
+    String message,
+    String hash,
+    Map<String, dynamic>? metadata,
+  ) async {
     if (accessToken == null) throw "Forbidden! Please authenticate firstly";
 
     final answer = await http.post(Uri.parse("$backendApiUrl/api/keys/sign"),
@@ -266,40 +272,11 @@ class AppState extends ChangeNotifier {
         message: message, signature: signature, chain: 137);
   }
 
-  // storeShareableKey(String id, String key) async {
-  //   if (id.contains(":")) {
-  //     throw "Unsupported id with ':' charated";
-  //   }
-
-  //   if (!_knownKeys.contains(id)) {
-  //     _knownKeys.add(id);
-  //     await _storage.write(key: _keysList(), value: _knownKeys.join(":"));
-  //     notifyListeners();
-  //   }
-  // }
-
-  // readShareableKey(String id) async {
-  //   if (_knownKeys.contains(id)) {
-  //     final keyFile = await _storage.read(key: _key(id));
-  //     if (keyFile != _shareableKey) {
-  //       _shareableKey = keyFile;
-  //       notifyListeners();
-  //     }
-  //   } else if (_shareableKey != null) {
-  //     _shareableKey = null;
-  //     notifyListeners();
-  //   }
-  // }
-
-  // setOwnerKey(String key) {
-  //   _authToken = key;
-  //   notifyListeners();
-  // }
-
-  // loadKeys() async {
-  //   final list = await _storage.read(key: _keysList());
-  //   _knownKeys.addAll(list?.split(";") ?? []);
-  // }
+  Future<String> getEthereumAddress() async {
+    final shareableKey = await readShareableKey();
+    if (shareableKey == null) throw 'Shareable key not found.';
+    return await OfflineSigner.getEthereumAddress(shareableKey);
+  }
 
   Map<String, String> get headers {
     return <String, String>{
@@ -316,7 +293,7 @@ class AppState extends ChangeNotifier {
     };
   }
 
-  fetchKeys() async {
+  Future<void> fetchKeys() async {
     log('fetching keys');
     var response = await http.get(Uri.parse("$backendApiUrl/api/keys"),
         headers: apiHeaders);
@@ -334,7 +311,7 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  signin(String apiKey) async {
+  Future<void> signin(String apiKey) async {
     log('signin');
     var response = await http.post(
       Uri.parse("$backendApiUrl/api/auth/signin"),

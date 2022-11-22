@@ -8,10 +8,10 @@ class KeyImportPage extends StatefulWidget {
   const KeyImportPage({Key? key}) : super(key: key);
 
   @override
-  State<StatefulWidget> createState() => _KeyImportPageData();
+  State<StatefulWidget> createState() => _KeyImportPage();
 }
 
-class _KeyImportPageData extends State<KeyImportPage> {
+class _KeyImportPage extends State<KeyImportPage> {
   final _scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
   final TextEditingController _controller = TextEditingController();
   List<PlatformFile>? _paths;

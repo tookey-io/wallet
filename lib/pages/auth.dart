@@ -4,9 +4,10 @@ import 'dart:io';
 import 'package:appcheck/appcheck.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:flutter_rust_bridge_template/pages/qr_scanner.dart';
-import 'package:flutter_rust_bridge_template/state.dart';
 import 'package:provider/provider.dart';
+
+import 'package:tookey/services/qr_scanner.dart';
+import 'package:tookey/state.dart';
 
 class AuthPage extends StatefulWidget {
   final String title;

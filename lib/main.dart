@@ -1,34 +1,26 @@
 import 'dart:async';
 import 'dart:developer';
-import 'dart:ffi';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:flutter_rust_bridge_template/pages/auth.dart';
-import 'package:flutter_rust_bridge_template/pages/key_list.dart';
-import 'package:flutter_rust_bridge_template/pages/wallet_connect.dart';
-import 'package:flutter_rust_bridge_template/state.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:provider/provider.dart';
 import 'package:uni_links/uni_links.dart';
-import 'ffi.dart';
-import 'dart:io' as io;
+
+import 'package:tookey/deps.dart';
+import 'package:tookey/ffi.dart';
+import 'package:tookey/pages/auth.dart';
+import 'package:tookey/pages/key_list.dart';
+import 'package:tookey/state.dart';
 
 bool _initialUriIsHandled = false;
 
 Future<void> main() async {
   await dotenv.load();
-  const base = "native";
-  final dylib = io.Platform.isWindows ? '$base.dll' : 'lib$base.so';
-
-  final lib = io.Platform.isIOS || io.Platform.isMacOS
-      ? DynamicLibrary.executable()
-      : DynamicLibrary.open(dylib);
-
+  final lib = loadLibrary("native");
   api = NativeImpl(lib);
-
   api.connectLogger().listen((event) {
     log("Rust log: $event");
   });
@@ -50,7 +42,7 @@ class MyApp extends StatefulWidget {
   State<StatefulWidget> createState() => _MyAppState();
 }
 
-class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
+class _MyAppState extends State<MyApp> {
   Uri? _initialUri;
   Uri? _currentUri;
   Object? _err;
@@ -147,9 +139,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
     return MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'Tookey Signer',
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
-        ),
+        theme: ThemeData(primarySwatch: Colors.blue),
         home: Consumer<AppState>(builder: (context, state, child) {
           if (state.accessToken == null) {
             final pattern = RegExp(r'^tookey:\/\/access\/([0-9a-f]+)$');
@@ -160,9 +150,8 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
               state.signin(apiKey);
             }
             return const AuthPage(title: 'Tookey Signer');
-          } else {
-            return const KeysListPage(title: "Keys");
           }
+          return const KeysListPage(title: "Keys");
         }));
   }
 }
