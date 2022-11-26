@@ -1,105 +1,36 @@
 import 'dart:collection';
-import 'dart:convert';
 import 'dart:core';
 import 'dart:developer';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:http/http.dart' as http;
-
+import 'package:share_plus/share_plus.dart';
 import 'package:tookey/ffi.dart';
+import 'package:tookey/services/backend_client.dart';
 import 'package:tookey/services/keygen.dart';
 import 'package:tookey/services/signer.dart';
 
-_keysList() => "storage:KEYS";
-_key(String id) => "storage:KEY:$id";
-_keyAdmin(String id) => "storage:KEY:ADMIN:$id";
-_accessTokenStorage() => "storage:TOKEN:ACCESS";
-_refreshTokenStorage() => "storage:TOKEN:REFRESH";
-
-extension IsOk on http.Response {
-  bool get ok {
-    return (statusCode ~/ 100) == 2;
-  }
-}
-
-class AuthToken {
-  final String token;
-  final String validUntil;
-
-  AuthToken(this.token, this.validUntil);
-
-  AuthToken.fromJson(Map<String, dynamic> json)
-      : token = json['token'],
-        validUntil = json['validUntil'];
-
-  Map<String, dynamic> toJson() => {
-        'token': token,
-        'validUntil': validUntil,
-      };
-
-  @override
-  String toString() => jsonEncode(toJson());
-}
-
-class Keystore {
-  String publicKey;
-  String adminKey;
-  String shareableKey;
-
-  Keystore(this.publicKey, this.shareableKey, this.adminKey);
-}
-
-class KeyRecord {
-  final int id;
-  final String roomId;
-  final int threshold;
-  final int parties;
-  final String name;
-  final String description;
-  final List<String> tags;
-  final String publicKey;
-
-  KeyRecord(this.id, this.roomId, this.threshold, this.parties, this.name,
-      this.description, this.tags, this.publicKey);
-
-  KeyRecord.fromJson(Map<String, dynamic> json)
-      : id = json['id'],
-        roomId = json['roomId'],
-        threshold = json['participantsThreshold'],
-        parties = json['parties'] ?? 3,
-        name = json['name'],
-        description = json['description'],
-        tags =
-            (json['tags'] as List<dynamic>).map((e) => e.toString()).toList(),
-        publicKey = json['publicKey'];
-
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'roomId': roomId,
-        'participantsThreshold': threshold,
-        'parties': parties,
-        'name': name,
-        'description': description,
-        'tags': tags,
-        'publicKey': publicKey,
-      };
-}
+String _keysList() => 'storage:KEYS';
+String _key(String id) => 'storage:KEY:$id';
+String _accessTokenStorage() => 'storage:TOKEN:ACCESS';
+String _refreshTokenStorage() => 'storage:TOKEN:REFRESH';
 
 class AppState extends ChangeNotifier {
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
+  final Set<String> _secretKeys = {};
+  final HashMap<String, KeyRecord> _knownKeys = HashMap();
+  final String relayUrl = dotenv.env['RELAY_URL'] ?? '';
+  final String backendApiUrl = dotenv.env['BACKEND_API_URL'] ?? '';
+
   AuthToken? _accessToken;
   AuthToken? _refreshToken;
   String? _shareableKey;
   String? _ownerKey;
-  final Set<String> _secretKeys = {};
-  final HashMap<String, KeyRecord> _knownKeys = HashMap();
-  final String managerUrl = dotenv.env['MANAGER_URL'] ?? "http://10.0.2.2:8000";
-  final String backendApiUrl =
-      dotenv.env['BACKEND_API_URL'] ?? "http://10.0.2.2:9001";
+  BackendClient? backend;
 
-  initialize() async {
+  Future<void> initialize() async {
+    backend = await BackendClient.create(baseUrl: backendApiUrl);
     await _loadStorage();
   }
 
@@ -107,15 +38,16 @@ class AppState extends ChangeNotifier {
   set accessToken(AuthToken? value) {
     if (_accessToken != value) {
       _accessToken = value;
-      _storage.write(
-        key: _accessTokenStorage(),
-        value: _accessToken.toString(),
-      );
-      notifyListeners();
-
       if (_accessToken != null) {
+        _storage.write(
+          key: _accessTokenStorage(),
+          value: _accessToken.toString(),
+        );
         fetchKeys();
+      } else {
+        _storage.delete(key: _accessTokenStorage());
       }
+      notifyListeners();
     }
   }
 
@@ -123,10 +55,15 @@ class AppState extends ChangeNotifier {
   set refreshToken(AuthToken? value) {
     if (_refreshToken != value) {
       _refreshToken = value;
-      _storage.write(
-        key: _refreshTokenStorage(),
-        value: _refreshToken.toString(),
-      );
+      if (_refreshToken != null) {
+        _storage.write(
+          key: _refreshTokenStorage(),
+          value: _refreshToken.toString(),
+        );
+      } else {
+        _storage.delete(key: _refreshTokenStorage());
+      }
+
       notifyListeners();
     }
   }
@@ -159,84 +96,107 @@ class AppState extends ChangeNotifier {
         : null;
   }
 
+  Future<String?> getShareableAddress() async {
+    final shareableKey = await readShareableKey();
+    return shareableKey != null
+        ? await api.toEthereumAddress(key: shareableKey)
+        : null;
+  }
+
   List<KeyRecord> get knownKeys => _knownKeys.values
       // .where((element) => _secretKeys.contains(element.publicKey))
       .toList();
 
   List<String> get availableKeys {
-    var list = knownKeys.map((k) => k.publicKey).toList();
+    final list = knownKeys.map((k) => k.publicKey).toList();
+    // ignore: cascade_invocations
     list.addAll(_secretKeys);
     return list;
   }
 
   Future<void> _loadStorage() async {
-    var refreshTokenString = await _storage.read(key: _refreshTokenStorage());
+    // await _storage.deleteAll();
+    final refreshTokenString = await _storage.read(key: _refreshTokenStorage());
     if (refreshTokenString != null) {
-      refreshToken = AuthToken.fromJson(jsonDecode(refreshTokenString));
-      var accessTokenString = await _storage.read(key: _accessTokenStorage());
+      refreshToken = AuthToken.fromJsonString(refreshTokenString);
+      final accessTokenString = await _storage.read(key: _accessTokenStorage());
       if (accessTokenString != null) {
-        accessToken = AuthToken.fromJson(jsonDecode(accessTokenString));
+        accessToken = AuthToken.fromJsonString(accessTokenString);
       }
     }
-    _secretKeys.addAll(await _storage
-        .read(key: _keysList())
-        .then((raw) => raw?.split(";") ?? []));
+    _secretKeys.addAll(
+      await _storage
+          .read(key: _keysList())
+          .then((raw) => raw?.split(';') ?? []),
+    );
 
     notifyListeners();
   }
 
-  Future<void> addKey(
-      String publicKey, String shareableKey, String adminKey) async {
-    if (publicKey.contains(":")) throw "Unsupported id with ':' charater";
-    if (_secretKeys.contains(publicKey)) throw "Duplicate id?!";
+  Future<void> addKey(String publicKey, String shareableKey) async {
+    if (publicKey.contains(':')) {
+      throw UnsupportedError("Unsupported id with ':' charater");
+    }
+    if (_secretKeys.contains(publicKey) == false) {
+      // throw "Duplicate id?!";
+      _secretKeys.add(publicKey);
+      await _storage.write(key: _keysList(), value: _secretKeys.join(':'));
+      await _storage.write(key: _key(publicKey), value: shareableKey);
+    }
 
-    _secretKeys.add(publicKey);
-    await _storage.write(key: _keysList(), value: _secretKeys.join(":"));
-    await _storage.write(key: _key(publicKey), value: shareableKey);
-    await _storage.write(key: _keyAdmin(publicKey), value: adminKey);
     await fetchKeys();
     notifyListeners();
 
     return;
   }
 
-  Future<Keystore> generateKey(String? name, String? description) async {
-    if (accessToken == null) throw "Forbidden! Please authenticate firstly";
-    // begin process
-    final answer = await http.post(Uri.parse("$backendApiUrl/api/keys"),
-        body: jsonEncode(<String, dynamic>{
-          "participantsThreshold": 2,
-          "participantsCount": 3,
-          "timeoutSeconds": 60,
-          "name": name ?? "",
-          "description": description ?? "",
-          "tags": ["shareable"]
-        }),
-        headers: apiHeaders);
+  Future<void> shareKey([String? shareableKey]) async {
+    shareableKey ??= await readShareableKey();
+    if (shareableKey == null) throw ArgumentError('Key not found');
+    final data = Uint8List.fromList(shareableKey.codeUnits);
+    await Share.shareXFiles([
+      XFile.fromData(
+        data,
+        name: 'key.json',
+        mimeType: 'application/json',
+      ),
+    ]);
+  }
 
-    if (!answer.ok) {
-      log("Status code is ${answer.statusCode}");
-      if (answer.statusCode == 403) {}
-      throw answer.body;
-    }
+  Future<void> importKey(String importedKey) async {
+    final publicKey = await api.toPublicKey(key: importedKey, compressed: true);
 
-    final record = jsonDecode(answer.body);
-    final String roomId = record['roomId'];
-    final shareableKeygenerator =
-        await Keygenerator.create(2, managerUrl, roomId);
-    final adminKeygenerator = await Keygenerator.create(3, managerUrl, roomId);
+    // TODO(temadev): backend, save to participants, approve
+    await addKey(publicKey, importedKey);
+  }
 
-    final results = await Future.wait(
-        [shareableKeygenerator.keygen(), adminKeygenerator.keygen()]);
+  Future<List<Keystore>> generateKey(String? name, String? description) async {
+    final keyRecord = await backend?.generateKey(
+      accessToken?.token,
+      name: name,
+      description: description,
+    );
 
-    var publicKey = await api.toPublicKey(key: results[0], compressed: true);
+    final roomId = keyRecord!.roomId;
 
-    log("Key is $publicKey");
+    final shareableKeygen = await Keygen.create(2, relayUrl, roomId);
+    final adminKeygen = await Keygen.create(3, relayUrl, roomId);
 
-    var key = Keystore(publicKey, results[0], results[1]);
-    await addKey(key.publicKey, key.shareableKey, key.adminKey);
+    final results = await Future.wait([
+      shareableKeygen.keygen(),
+      adminKeygen.keygen(),
+    ]);
 
-    return key;
+    final publicKey = await api.toPublicKey(key: results[0], compressed: true);
+
+    log('Key is $publicKey');
+
+    final shareableKey = Keystore(publicKey, results[0]);
+    final adminKey = Keystore(publicKey, results[1]);
+
+    await addKey(shareableKey.publicKey, shareableKey.shareableKey);
+
+    return [shareableKey, adminKey];
   }
 
   Future<String> signKey(
@@ -244,82 +204,60 @@ class AppState extends ChangeNotifier {
     String hash,
     Map<String, dynamic>? metadata,
   ) async {
-    if (accessToken == null) throw "Forbidden! Please authenticate firstly";
+    final signRecord = await backend?.signKey(
+      accessToken?.token,
+      shareableKey!,
+      message,
+      hash,
+      metadata: metadata,
+    );
 
-    final answer = await http.post(Uri.parse("$backendApiUrl/api/keys/sign"),
-        body: jsonEncode(<String, dynamic>{
-          "publicKey": shareableKey!,
-          "data": hash,
-          "participantsConfirmations": [1, 2],
-          "metadata": metadata,
-        }),
-        headers: apiHeaders);
-
-    if (!answer.ok) {
-      log("Status code is ${answer.statusCode}");
-      if (answer.statusCode == 403) {}
-      throw answer.body;
-    }
-
-    final record = jsonDecode(answer.body);
-
-    final String roomId = record['roomId'];
     final localShare = await readShareableKey();
-    final signer = await Signer.create(managerUrl, localShare!, roomId);
+
+    final roomId = signRecord!.roomId;
+
+    final signer = await Signer.create(relayUrl, localShare!, roomId);
     final signature = await signer.sign(hash);
 
-    return api.toEthereumSignature(
-        message: message, signature: signature, chain: 137);
-  }
+    final ethSignature = await api.toEthereumSignature(
+      message: message,
+      signature: signature,
+      chain: 97,
+    );
 
-  Future<String> getEthereumAddress() async {
-    final shareableKey = await readShareableKey();
-    if (shareableKey == null) throw 'Shareable key not found.';
-    return await OfflineSigner.getEthereumAddress(shareableKey);
-  }
-
-  Map<String, String> get headers {
-    return <String, String>{
-      "Content-Type": "application/json",
-      "accept": "application/json",
-    };
-  }
-
-  Map<String, String>? get apiHeaders {
-    return <String, String>{
-      ...headers,
-      "Authorization":
-          accessToken?.token != null ? "Bearer ${accessToken!.token}" : ""
-    };
+    return ethSignature;
   }
 
   Future<void> fetchKeys() async {
-    log('fetching keys');
-    var response = await http.get(Uri.parse("$backendApiUrl/api/keys"),
-        headers: apiHeaders);
-
-    log(response.body);
-
-    final keys = (jsonDecode(response.body) as List<dynamic>)
-        .map((element) => KeyRecord.fromJson(element))
-        .toList();
-
-    _knownKeys.clear();
-    _knownKeys.addEntries(keys
-        .where((key) => key.publicKey != "")
-        .map((element) => MapEntry(element.publicKey, element)));
+    final keys = await backend?.fetchKeys(accessToken?.token);
+    _knownKeys
+      ..clear()
+      ..addEntries(
+        keys!
+            .where((key) => key.publicKey != '')
+            .map((element) => MapEntry(element.publicKey, element)),
+      );
     notifyListeners();
   }
 
   Future<void> signin(String apiKey) async {
-    log('signin');
-    var response = await http.post(
-      Uri.parse("$backendApiUrl/api/auth/signin"),
-      headers: {...headers, "apiKey": apiKey},
-    );
-
-    var authTokens = jsonDecode(response.body);
-    accessToken = AuthToken.fromJson(authTokens[0]);
-    refreshToken = AuthToken.fromJson(authTokens[1]);
+    final authTokens = await backend?.signin(apiKey);
+    if (authTokens?.access != null) accessToken = authTokens?.access;
+    if (authTokens?.refresh != null) refreshToken = authTokens?.refresh;
+    notifyListeners();
   }
+
+  void signout() {
+    log('signout');
+    accessToken = null;
+    refreshToken = null;
+    notifyListeners();
+  }
+}
+
+class Keystore {
+  Keystore(this.publicKey, this.shareableKey);
+
+  String publicKey;
+  String shareableKey;
 }

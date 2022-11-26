@@ -1,57 +1,61 @@
+import 'dart:convert';
 import 'dart:developer';
 
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:tookey/ffi.dart';
 
-class ExecutorException implements Exception {
-  String message;
-  ExecutorException(this.message);
-}
-
-class ExecutorAlreadyInitialized extends ExecutorException {
-  ExecutorAlreadyInitialized() : super("Already initialized");
-}
-
-class ExecutorIsNotInitialized extends ExecutorException {
-  ExecutorIsNotInitialized() : super("Executor is not initialized yet");
-}
-
-class ExecutionMessage {
-  final int sender;
-  final int? receiver;
-  final Map<String, dynamic> body;
-
-  ExecutionMessage(this.sender, this.receiver, this.body);
-
-  ExecutionMessage.fromJson(Map<String, dynamic> json)
-      : sender = json['sender'],
-        receiver = json['receiver'],
-        body = json['body'];
-
-  Map<String, dynamic> toJson() => {
-        'sender': sender,
-        'receiver': receiver,
-        'body': body,
-      };
-}
+part 'executor.g.dart';
 
 class Executor {
+  Executor(this.id, this.messages);
+
   late final int id;
   late final Stream<OutgoingMessage> messages;
 
-  Executor(this.id, this.messages);
-
   static Future<Executor> create() async {
-    int id = await api.getNextId();
-    var messages = api.initialize(id: id);
+    final id = await api.getNextId();
+    final messages = api.initialize(id: id);
     return Executor(id, messages);
   }
 
   Future<void> send(IncomingMessage msg) {
-    log("[$id]: Send incoming message: ${msg.runtimeType.toString()}");
+    log('[$id]: Send incoming message: ${msg.runtimeType.toString()}');
     return api.receive(id: id, value: msg);
   }
 
   Future<OutgoingMessage> pool() {
     return messages.first;
   }
+}
+
+class ExecutorException implements Exception {
+  ExecutorException(this.message);
+  String message;
+}
+
+class ExecutorAlreadyInitialized extends ExecutorException {
+  ExecutorAlreadyInitialized() : super('Already initialized');
+}
+
+class ExecutorIsNotInitialized extends ExecutorException {
+  ExecutorIsNotInitialized() : super('Executor is not initialized yet');
+}
+
+@JsonSerializable()
+class ExecutionMessage {
+  ExecutionMessage(this.sender, this.receiver, this.body);
+
+  factory ExecutionMessage.fromJson(Map<String, dynamic> json) =>
+      _$ExecutionMessageFromJson(json);
+
+  factory ExecutionMessage.fromJsonString(String jsonString) =>
+      _$ExecutionMessageFromJson(
+        jsonDecode(jsonString) as Map<String, dynamic>,
+      );
+
+  final int sender;
+  final int? receiver;
+  final Map<String, dynamic> body;
+
+  Map<String, dynamic> toJson() => _$ExecutionMessageToJson(this);
 }

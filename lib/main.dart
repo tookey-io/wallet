@@ -5,34 +5,35 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:provider/provider.dart';
-import 'package:uni_links/uni_links.dart';
-
 import 'package:tookey/deps.dart';
 import 'package:tookey/ffi.dart';
-import 'package:tookey/pages/auth.dart';
-import 'package:tookey/pages/key_list.dart';
+import 'package:tookey/pages/auth.page.dart';
+import 'package:tookey/pages/keys/keys.page.dart';
 import 'package:tookey/state.dart';
+import 'package:uni_links/uni_links.dart';
 
 bool _initialUriIsHandled = false;
 
 Future<void> main() async {
   await dotenv.load();
-  final lib = loadLibrary("native");
+  final lib = loadLibrary('native');
   api = NativeImpl(lib);
   api.connectLogger().listen((event) {
-    log("Rust log: $event");
+    log('Rust log: $event');
   });
 
-  runApp(ChangeNotifierProvider(
-    create: ((context) {
-      final state = AppState();
-      state.initialize();
-      return state;
-    }),
-    child: const MyApp(),
-  ));
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) {
+        final state = AppState();
+        // ignore: cascade_invocations
+        state.initialize();
+        return state;
+      },
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatefulWidget {
@@ -47,7 +48,7 @@ class _MyAppState extends State<MyApp> {
   Uri? _currentUri;
   Object? _err;
 
-  StreamSubscription? _streamSubscription;
+  StreamSubscription<Uri?>? _streamSubscription;
 
   @override
   void initState() {
@@ -75,21 +76,14 @@ class _MyAppState extends State<MyApp> {
     // was a weidget that will be disposed of (ex. a navigation route change).
     if (!_initialUriIsHandled) {
       _initialUriIsHandled = true;
-      Fluttertoast.showToast(
-          msg: "Invoked _initURIHandler",
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          timeInSecForIosWeb: 1,
-          backgroundColor: Colors.green,
-          textColor: Colors.white);
       try {
         final initialUri = await getInitialUri();
         if (initialUri != null) {
-          debugPrint("Initial URI received $initialUri");
+          debugPrint('Initial URI received $initialUri');
           if (!mounted) return;
           setState(() => _initialUri = initialUri);
         } else {
-          debugPrint("Null Initial URI received");
+          debugPrint('Null Initial URI received');
         }
       } on PlatformException {
         // Platform messages may fail but we ignore the exception
@@ -108,25 +102,28 @@ class _MyAppState extends State<MyApp> {
     if (!kIsWeb) {
       // It will handle app links while the app is already started - be it in
       // the foreground or in the background.
-      _streamSubscription = uriLinkStream.listen((Uri? uri) {
-        if (!mounted) return;
-        debugPrint('Received URI: $uri');
-        setState(() {
-          _currentUri = uri;
-          _err = null;
-        });
-      }, onError: (Object err) {
-        if (!mounted) return;
-        debugPrint('Error occurred: $err');
-        setState(() {
-          _currentUri = null;
-          if (err is FormatException) {
-            _err = err;
-          } else {
+      _streamSubscription = uriLinkStream.listen(
+        (Uri? uri) {
+          if (!mounted) return;
+          debugPrint('Received URI: $uri');
+          setState(() {
+            _currentUri = uri;
             _err = null;
-          }
-        });
-      });
+          });
+        },
+        onError: (Object err) {
+          if (!mounted) return;
+          debugPrint('Error occurred: $err');
+          setState(() {
+            _currentUri = null;
+            if (err is FormatException) {
+              _err = err;
+            } else {
+              _err = null;
+            }
+          });
+        },
+      );
     }
   }
 
@@ -137,21 +134,23 @@ class _MyAppState extends State<MyApp> {
     if (_err != null) debugPrint('_err ${_err.toString()}');
 
     return MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'Tookey Signer',
-        theme: ThemeData(primarySwatch: Colors.blue),
-        home: Consumer<AppState>(builder: (context, state, child) {
+      debugShowCheckedModeBanner: false,
+      title: 'Tookey Signer',
+      theme: ThemeData(primarySwatch: Colors.blue),
+      home: Consumer<AppState>(
+        builder: (context, state, child) {
           if (state.accessToken == null) {
             final pattern = RegExp(r'^tookey:\/\/access\/([0-9a-f]+)$');
             if (pattern.hasMatch(_currentUri.toString())) {
               final apiKey =
                   pattern.firstMatch(_currentUri.toString())!.group(1)!;
-              log("ApiKey is $apiKey");
               state.signin(apiKey);
             }
             return const AuthPage(title: 'Tookey Signer');
           }
-          return const KeysListPage(title: "Keys");
-        }));
+          return const KeysPage(title: 'Keys');
+        },
+      ),
+    );
   }
 }
