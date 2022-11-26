@@ -33,4 +33,5 @@ TEST_ENV=true
 BACKEND_API_URL=http://localhost:2000
 RELAY_URL=http://localhost:8000
 TELEGRAM_BOT=tookey_dev_bot
+NODE_URL=https://data-seed-prebsc-2-s3.binance.org:8545/
 ```

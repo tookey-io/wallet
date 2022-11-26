@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
+import 'package:http/http.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:tookey/ffi.dart';
@@ -9,6 +11,7 @@ import 'package:tookey/widgets/dialog/dialog_button.dart';
 import 'package:tookey/widgets/dialog/dialog_progress.dart';
 import 'package:tookey/widgets/dialog/dialog_title.dart';
 import 'package:tookey/widgets/toaster.dart';
+import 'package:web3dart/web3dart.dart';
 
 class WalletConnectSignDialog extends StatefulWidget {
   const WalletConnectSignDialog({
@@ -52,18 +55,23 @@ class _WalletConnectSignDialogState extends State<WalletConnectSignDialog> {
 
     try {
       final hash = await api.messageToHash(message: widget.message);
-      final key = await state.signKey(widget.message, hash, widget.metadata);
+      final signedTransaction =
+          await state.signKey(widget.message, hash, widget.metadata);
 
-      signJoinHandle.complete(key);
-      await Toaster.success('Signed', time: 10);
-      widget.onSign(result: key);
+      await Toaster.success('Transaction signed');
+      await state
+          .sendSignedTransaction(signedTransaction)
+          .then((value) => Toaster.success('Transaction successfully sent'))
+          .catchError((error) => Toaster.error('Transaction send fail'));
+      signJoinHandle.complete(signedTransaction);
+      widget.onSign(result: signedTransaction);
     } catch (error) {
-      signJoinHandle.completeError('');
       if (error is BackendResponseException) {
         if (error.statusCode == 403) await Toaster.error(error.message);
       } else {
-        await Toaster.error('Failed', time: 10);
+        await Toaster.error('Failed');
       }
+      signJoinHandle.completeError('');
       widget.onSign();
     }
 
@@ -77,12 +85,7 @@ class _WalletConnectSignDialogState extends State<WalletConnectSignDialog> {
     if (isExecuting) {
       return SimpleDialog(
         contentPadding: const EdgeInsets.all(20),
-        children: [
-          DialogProgress(
-            title: 'Sign progress',
-            onCancel: _onCancel,
-          )
-        ],
+        children: [DialogProgress(title: 'Sign progress', onCancel: _onCancel)],
       );
     }
 

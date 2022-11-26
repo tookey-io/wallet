@@ -5,11 +5,13 @@ import 'dart:developer';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:http/http.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:tookey/ffi.dart';
 import 'package:tookey/services/backend_client.dart';
 import 'package:tookey/services/keygen.dart';
 import 'package:tookey/services/signer.dart';
+import 'package:web3dart/web3dart.dart';
 
 String _keysList() => 'storage:KEYS';
 String _key(String id) => 'storage:KEY:$id';
@@ -22,6 +24,7 @@ class AppState extends ChangeNotifier {
   final HashMap<String, KeyRecord> _knownKeys = HashMap();
   final String relayUrl = dotenv.env['RELAY_URL'] ?? '';
   final String backendApiUrl = dotenv.env['BACKEND_API_URL'] ?? '';
+  final String nodeUrl = dotenv.env['NODE_URL'] ?? '';
 
   AuthToken? _accessToken;
   AuthToken? _refreshToken;
@@ -161,6 +164,13 @@ class AppState extends ChangeNotifier {
         mimeType: 'application/json',
       ),
     ]);
+  }
+
+  Future<void> sendSignedTransaction(String signedTransaction) async {
+    final httpClient = Client();
+    final ethClient = Web3Client(nodeUrl, httpClient);
+    final data = Uint8List.fromList(signedTransaction.codeUnits);
+    await ethClient.sendRawTransaction(data);
   }
 
   Future<void> importKey(String importedKey) async {
