@@ -48,17 +48,17 @@ class _AuthPageState extends State<AuthPage> {
   Future<void> _onTelegramSignin(AppState state) async {
     if (dotenv.env['TEST_ENV'] != null) return state.signin('');
 
-    if (Platform.isIOS) {
-      final app = await AppCheck.checkAvailability('tg://');
+    final bot = dotenv.env['TELEGRAM_BOT'];
+    final appLink = 'tg://resolve?domain=$bot&start=YXBwPWF1dGg';
+
+    if (Platform.isIOS || Platform.isAndroid) {
+      final package = Platform.isIOS ? 'tg://' : 'org.telegram.messenger';
+      final app = await AppCheck.checkAvailability(package);
       if (app?.packageName != null) {
-        final bot = dotenv.env['TELEGRAM_BOT'];
-        final appLink = 'tg://resolve?domain=$bot&start=YXBwPWF1dGg';
         await AppCheck.launchApp(appLink).catchError((err) {
           Toaster.error('Telegram not found!', gravity: ToastGravity.BOTTOM);
         });
       }
-    } else if (Platform.isAndroid) {
-      await Toaster.error('Not implemented yet', gravity: ToastGravity.BOTTOM);
     }
   }
 

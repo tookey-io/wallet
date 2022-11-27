@@ -1,6 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="io.tookey">
    <uses-permission android:name="android.permission.USE_FINGERPRINT"/>
+   <queries>
+        <package android:name="org.telegram.messenger"/>
+   </queries>
    <application
         android:label="tookey"
         android:name="${applicationName}"
