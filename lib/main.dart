@@ -23,6 +23,9 @@ Future<void> main() async {
     log('Rust log: $event');
   });
 
+  WidgetsFlutterBinding.ensureInitialized();
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+
   runApp(
     ChangeNotifierProvider(
       create: (context) {
