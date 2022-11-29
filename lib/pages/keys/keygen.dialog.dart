@@ -85,7 +85,10 @@ class _KeygenDialogState extends State<KeygenDialog> {
                   DialogButton(
                     title: 'SAVE A BACKUP',
                     onPressed: () async {
-                      await state.shareKey(adminKey.shareableKey);
+                      await state.shareKey(
+                        key: adminKey.shareableKey,
+                        name: adminKey.publicKey,
+                      );
                       if (mounted) {
                         Navigator.pop(context);
                         Navigator.pop(ctx);

@@ -1,17 +1,20 @@
 import 'dart:collection';
 import 'dart:core';
 import 'dart:developer';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:tookey/ffi.dart';
 import 'package:tookey/services/backend_client.dart';
 import 'package:tookey/services/keygen.dart';
 import 'package:tookey/services/signer.dart';
 import 'package:web3dart/web3dart.dart';
+import 'package:path/path.dart' as path;
 
 String _keysList() => 'storage:KEYS';
 String _key(String id) => 'storage:KEY:$id';
@@ -153,17 +156,26 @@ class AppState extends ChangeNotifier {
     return;
   }
 
-  Future<void> shareKey([String? shareableKey]) async {
-    shareableKey ??= await readShareableKey();
-    if (shareableKey == null) throw ArgumentError('Key not found');
-    final data = Uint8List.fromList(shareableKey.codeUnits);
-    await Share.shareXFiles([
-      XFile.fromData(
-        data,
-        name: 'key.json',
-        mimeType: 'application/json',
-      ),
-    ]);
+  Future<void> shareKey({String? key, String? name}) async {
+    key ??= await readShareableKey();
+    name ??= _shareableKey;
+    if (key == null) throw ArgumentError('Key not found');
+    final data = Uint8List.fromList(key.codeUnits);
+
+    final fileName = name != null ? '$name.json' : 'backup-key.json';
+    final directory = await getTemporaryDirectory();
+
+    final xfile = XFile.fromData(
+      data,
+      name: fileName,
+      path: directory.path,
+      mimeType: 'application/json',
+    );
+
+    final filePath = path.join(xfile.path, fileName);
+    await xfile.saveTo(filePath);
+
+    await Share.shareXFiles([XFile(filePath)], subject: 'Backup Key');
   }
 
   Future<void> sendSignedTransaction(String signedTransaction) async {
