@@ -104,6 +104,7 @@ class _WalletConnectPageState extends State<WalletConnectPage> {
 
   Future<void> _approveTransactionDialog(int id, WCEthereumTransaction tx) {
     return showDialog(
+      barrierDismissible: false,
       context: context,
       builder: (context) {
         return WalletConnectSignDialog(
@@ -147,6 +148,7 @@ class _WalletConnectPageState extends State<WalletConnectPage> {
         : ascii.decode(hexToBytes(message.data!));
 
     return showDialog(
+      barrierDismissible: false,
       context: context,
       builder: (context) {
         return WalletConnectSignDialog(
@@ -178,6 +180,7 @@ class _WalletConnectPageState extends State<WalletConnectPage> {
     log('_onSessionRequest');
 
     return showDialog(
+      barrierDismissible: false,
       context: context,
       builder: (context) {
         return WalletConnectSessionDialog(

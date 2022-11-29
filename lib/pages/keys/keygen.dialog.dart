@@ -54,6 +54,7 @@ class _KeygenDialogState extends State<KeygenDialog> {
 
   Future<void> _successDialog(Keystore adminKey) {
     return showDialog(
+      barrierDismissible: false,
       context: context,
       builder: (ctx) => SimpleDialog(
         contentPadding: const EdgeInsets.all(20),
@@ -110,6 +111,7 @@ class _KeygenDialogState extends State<KeygenDialog> {
 
   Future<void> _errorDialog(String text) {
     return showDialog(
+      barrierDismissible: false,
       context: context,
       builder: (ctx) => SimpleDialog(
         contentPadding: const EdgeInsets.all(20),
