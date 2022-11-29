@@ -11,14 +11,16 @@ import 'package:tookey/widgets/dialog/dialog_button.dart';
 import 'package:tookey/widgets/dialog/dialog_progress.dart';
 import 'package:tookey/widgets/dialog/dialog_title.dart';
 import 'package:tookey/widgets/toaster.dart';
-import 'package:web3dart/web3dart.dart';
+import 'package:wallet_connect/wallet_connect.dart';
 
 class WalletConnectSignDialog extends StatefulWidget {
   const WalletConnectSignDialog({
     super.key,
     required this.onSign,
     required this.onReject,
-    required this.message,
+    this.tx,
+    this.message,
+    this.data,
     required this.title,
     this.icon,
     this.metadata,
@@ -26,7 +28,9 @@ class WalletConnectSignDialog extends StatefulWidget {
 
   final void Function({String? result}) onSign;
   final void Function() onReject;
-  final String message;
+  final WCEthereumTransaction? tx;
+  final WCEthereumSignMessage? message;
+  final String? data;
   final String title;
   final String? icon;
   final Map<String, dynamic>? metadata;
@@ -54,17 +58,34 @@ class _WalletConnectSignDialogState extends State<WalletConnectSignDialog> {
     });
 
     try {
-      final hash = await api.messageToHash(message: widget.message);
-      final signedTransaction =
-          await state.signKey(widget.message, hash, widget.metadata);
+      if (widget.tx != null) {
+        // TODO(temadev): implement
+        final hash = await api.messageToHash(message: widget.tx!.data!);
+        final signedTransaction =
+            await state.signKey(widget.tx!.data!, hash, widget.metadata);
 
-      await Toaster.success('Transaction signed');
-      await state
-          .sendSignedTransaction(signedTransaction)
-          .then((value) => Toaster.success('Transaction successfully sent'))
-          .catchError((error) => Toaster.error('Transaction send fail'));
-      signJoinHandle.complete(signedTransaction);
-      widget.onSign(result: signedTransaction);
+        await Toaster.success('Transaction signed');
+        await state
+            .sendSignedTransaction(signedTransaction)
+            .then((value) => Toaster.success('Transaction successfully sent'))
+            .catchError((error) => Toaster.error('Transaction send fail'));
+        signJoinHandle.complete(signedTransaction);
+        widget.onSign(result: signedTransaction);
+      }
+      if (widget.message != null) {
+        // TODO(temadev): implement
+        final hash = await api.messageToHash(message: widget.tx!.data!);
+        final signedTransaction =
+            await state.signKey(widget.tx!.data!, hash, widget.metadata);
+
+        await Toaster.success('Transaction signed');
+        await state
+            .sendSignedTransaction(signedTransaction)
+            .then((value) => Toaster.success('Transaction successfully sent'))
+            .catchError((error) => Toaster.error('Transaction send fail'));
+        signJoinHandle.complete(signedTransaction);
+        widget.onSign(result: signedTransaction);
+      }
     } catch (error) {
       if (error is BackendResponseException) {
         if (error.statusCode == 403) await Toaster.error(error.message);
@@ -112,7 +133,7 @@ class _WalletConnectSignDialogState extends State<WalletConnectSignDialog> {
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               children: [
-                Text(widget.message, style: const TextStyle(fontSize: 16)),
+                Text(widget.data!, style: const TextStyle(fontSize: 16)),
               ],
             ),
           ),
