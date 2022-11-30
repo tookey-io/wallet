@@ -152,6 +152,29 @@ class HttpClient {
     );
   }
 
+  /// HTTP REQUEST request.
+  Future<Response<T>> request<T>(
+    String path, {
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+    CancelToken? cancelToken,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) {
+    return _mapException(
+      () => _client.request(
+        path,
+        data: data,
+        queryParameters: queryParameters,
+        options: options,
+        cancelToken: cancelToken,
+        onSendProgress: onSendProgress,
+        onReceiveProgress: onReceiveProgress,
+      ),
+    );
+  }
+
   // Map Dio exceptions (and any other exceptions) to an exception type
   // supported by our application.
   Future<Response<T>> _mapException<T>(HttpLibraryMethod<T> method) async {

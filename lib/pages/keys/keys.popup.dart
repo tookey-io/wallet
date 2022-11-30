@@ -11,6 +11,7 @@ class KeysPopup extends StatelessWidget {
 
   Future<void> _showImportKeyDialog(BuildContext context) async {
     return showDialog(
+      barrierDismissible: false,
       context: context,
       builder: (context) => const KeyImportDialog(),
     );
@@ -18,6 +19,7 @@ class KeysPopup extends StatelessWidget {
 
   Future<Keystore?> _showKeygenDialog(BuildContext context) async {
     return showDialog(
+      barrierDismissible: false,
       context: context,
       builder: (context) => const KeygenDialog(),
     );

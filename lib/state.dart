@@ -1,24 +1,20 @@
 import 'dart:collection';
 import 'dart:core';
 import 'dart:developer';
-import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:http/http.dart';
+import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:tookey/ffi.dart';
 import 'package:tookey/services/backend_client.dart';
 import 'package:tookey/services/keygen.dart';
 import 'package:tookey/services/signer.dart';
-import 'package:web3dart/web3dart.dart';
-import 'package:path/path.dart' as path;
 
 String _keysList() => 'storage:KEYS';
 String _key(String id) => 'storage:KEY:$id';
-String _accessTokenStorage() => 'storage:TOKEN:ACCESS';
 String _refreshTokenStorage() => 'storage:TOKEN:REFRESH';
 
 class AppState extends ChangeNotifier {
@@ -27,34 +23,19 @@ class AppState extends ChangeNotifier {
   final HashMap<String, KeyRecord> _knownKeys = HashMap();
   final String relayUrl = dotenv.env['RELAY_URL'] ?? '';
   final String backendApiUrl = dotenv.env['BACKEND_API_URL'] ?? '';
-  final String nodeUrl = dotenv.env['NODE_URL'] ?? '';
 
-  AuthToken? _accessToken;
-  AuthToken? _refreshToken;
   String? _shareableKey;
   String? _ownerKey;
+  AuthToken? _refreshToken;
   BackendClient? backend;
 
   Future<void> initialize() async {
-    backend = await BackendClient.create(baseUrl: backendApiUrl);
     await _loadStorage();
-  }
-
-  AuthToken? get accessToken => _accessToken;
-  set accessToken(AuthToken? value) {
-    if (_accessToken != value) {
-      _accessToken = value;
-      if (_accessToken != null) {
-        _storage.write(
-          key: _accessTokenStorage(),
-          value: _accessToken.toString(),
-        );
-        fetchKeys();
-      } else {
-        _storage.delete(key: _accessTokenStorage());
-      }
-      notifyListeners();
-    }
+    backend = await BackendClient.create(
+      baseUrl: backendApiUrl,
+      refreshToken: _refreshToken,
+    );
+    await fetchKeys();
   }
 
   AuthToken? get refreshToken => _refreshToken;
@@ -125,10 +106,6 @@ class AppState extends ChangeNotifier {
     final refreshTokenString = await _storage.read(key: _refreshTokenStorage());
     if (refreshTokenString != null) {
       refreshToken = AuthToken.fromJsonString(refreshTokenString);
-      final accessTokenString = await _storage.read(key: _accessTokenStorage());
-      if (accessTokenString != null) {
-        accessToken = AuthToken.fromJsonString(accessTokenString);
-      }
     }
     _secretKeys.addAll(
       await _storage
@@ -179,10 +156,10 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> sendSignedTransaction(String signedTransaction) async {
-    final httpClient = Client();
-    final ethClient = Web3Client(nodeUrl, httpClient);
-    final data = Uint8List.fromList(signedTransaction.codeUnits);
-    await ethClient.sendRawTransaction(data);
+    // final httpClient = Client();
+    // final ethClient = Web3Client(nodeUrl, httpClient);
+    // final data = Uint8List.fromList(signedTransaction.codeUnits);
+    // await ethClient.sendRawTransaction(data);
   }
 
   Future<void> importKey(String importedKey) async {
@@ -194,7 +171,6 @@ class AppState extends ChangeNotifier {
 
   Future<List<Keystore>> generateKey(String? name, String? description) async {
     final keyRecord = await backend?.generateKey(
-      accessToken?.token,
       name: name,
       description: description,
     );
@@ -227,7 +203,6 @@ class AppState extends ChangeNotifier {
     Map<String, dynamic>? metadata,
   ) async {
     final signRecord = await backend?.signKey(
-      accessToken?.token,
       shareableKey!,
       message,
       hash,
@@ -251,7 +226,7 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> fetchKeys() async {
-    final keys = await backend?.fetchKeys(accessToken?.token);
+    final keys = await backend?.fetchKeys();
     _knownKeys
       ..clear()
       ..addEntries(
@@ -263,15 +238,13 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> signin(String apiKey) async {
-    final authTokens = await backend?.signin(apiKey);
-    if (authTokens?.access != null) accessToken = authTokens?.access;
-    if (authTokens?.refresh != null) refreshToken = authTokens?.refresh;
+    final authToken = await backend?.signin(apiKey);
+    if (authToken != null) refreshToken = authToken;
     notifyListeners();
   }
 
   void signout() {
     log('signout');
-    accessToken = null;
     refreshToken = null;
     notifyListeners();
   }

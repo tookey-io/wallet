@@ -60,9 +60,7 @@ class NetworkResponseException<OriginalException extends Exception, DataType>
     required super.exception,
     this.statusCode,
     this.data,
-  }) : super(
-          reason: NetworkExceptionReason.responseError,
-        );
+  }) : super(reason: NetworkExceptionReason.responseError);
 
   /// Response data, if any.
   final DataType? data;

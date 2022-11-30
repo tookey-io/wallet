@@ -142,7 +142,7 @@ class _MyAppState extends State<MyApp> {
       theme: ThemeData(primarySwatch: Colors.blue),
       home: Consumer<AppState>(
         builder: (context, state, child) {
-          if (state.accessToken == null) {
+          if (state.refreshToken == null) {
             final pattern = RegExp(r'^tookey:\/\/access\/([0-9a-f]+)$');
             if (pattern.hasMatch(_currentUri.toString())) {
               final apiKey =
@@ -150,8 +150,9 @@ class _MyAppState extends State<MyApp> {
               state.signin(apiKey);
             }
             return const AuthPage(title: 'Tookey Signer');
+          } else {
+            return const KeysPage(title: 'Keys');
           }
-          return const KeysPage(title: 'Keys');
         },
       ),
     );

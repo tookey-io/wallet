@@ -41,16 +41,16 @@ class WalletConnectSignDialog extends StatefulWidget {
 }
 
 class _WalletConnectSignDialogState extends State<WalletConnectSignDialog> {
-  Completer<String> signJoinHandle = Completer<String>();
+  Completer<String?> signJoinHandle = Completer<String?>();
   bool isExecuting = false;
 
   Future<void> _onCancel() async {
-    signJoinHandle.completeError('cancel');
+    signJoinHandle.complete();
     widget.onReject();
   }
 
   Future<void> _onSign(AppState state) async {
-    if (signJoinHandle.isCompleted) signJoinHandle = Completer<String>();
+    if (signJoinHandle.isCompleted) signJoinHandle = Completer<String?>();
     if (isExecuting) return;
 
     setState(() {
@@ -87,12 +87,12 @@ class _WalletConnectSignDialogState extends State<WalletConnectSignDialog> {
         widget.onSign(result: signedTransaction);
       }
     } catch (error) {
-      if (error is BackendResponseException) {
-        if (error.statusCode == 403) await Toaster.error(error.message);
+      if (error is BackendException) {
+        await Toaster.error(error.message);
       } else {
         await Toaster.error('Failed');
       }
-      signJoinHandle.completeError('');
+      signJoinHandle.complete();
       widget.onSign();
     }
 
