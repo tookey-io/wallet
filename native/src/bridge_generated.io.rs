@@ -47,6 +47,29 @@ pub extern "C" fn wire_receive(port_: i64, id: u32, value: *mut wire_IncomingMes
 }
 
 #[no_mangle]
+pub extern "C" fn wire_to_message_hash(port_: i64, tx_request: *mut wire_uint_8_list) {
+    wire_to_message_hash_impl(port_, tx_request)
+}
+
+#[no_mangle]
+pub extern "C" fn wire_convert_to_ethers_signature(
+    port_: i64,
+    tx_request: *mut wire_uint_8_list,
+    signature: *mut wire_uint_8_list,
+) {
+    wire_convert_to_ethers_signature_impl(port_, tx_request, signature)
+}
+
+#[no_mangle]
+pub extern "C" fn wire_encode_transaction(
+    port_: i64,
+    tx_request: *mut wire_uint_8_list,
+    signature: *mut wire_uint_8_list,
+) {
+    wire_encode_transaction_impl(port_, tx_request, signature)
+}
+
+#[no_mangle]
 pub extern "C" fn wire_critical__static_method__OutgoingMessage(
     port_: i64,
     message: *mut wire_uint_8_list,
@@ -96,6 +119,8 @@ pub extern "C" fn new_uint_8_list_0(len: i32) -> *mut wire_uint_8_list {
     };
     support::new_leak_box_ptr(ans)
 }
+
+// Section: related functions
 
 // Section: impl Wire2Api
 

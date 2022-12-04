@@ -147,6 +147,7 @@ class Signer extends AbstractSigner {
     executor.messages.listen(
       (outgoing) async {
         log('Outgoin: ${outgoing.runtimeType.toString()}');
+        print(outgoing);
 
         if (outgoing is OutgoingMessage_Ready) {
           await executor.send(

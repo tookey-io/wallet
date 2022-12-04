@@ -1,10 +1,13 @@
 import 'dart:collection';
+import 'dart:convert';
 import 'dart:core';
 import 'dart:developer';
+import 'dart:ffi';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:http/http.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -12,6 +15,9 @@ import 'package:tookey/ffi.dart';
 import 'package:tookey/services/backend_client.dart';
 import 'package:tookey/services/keygen.dart';
 import 'package:tookey/services/signer.dart';
+import 'package:tookey/tookey_transaction.dart';
+import 'package:wallet_connect/models/ethereum/wc_ethereum_transaction.dart';
+import 'package:web3dart/web3dart.dart';
 
 String _keysList() => 'storage:KEYS';
 String _key(String id) => 'storage:KEY:$id';
@@ -155,11 +161,9 @@ class AppState extends ChangeNotifier {
     await Share.shareXFiles([XFile(filePath)], subject: 'Backup Key');
   }
 
-  Future<void> sendSignedTransaction(String signedTransaction) async {
-    // final httpClient = Client();
-    // final ethClient = Web3Client(nodeUrl, httpClient);
-    // final data = Uint8List.fromList(signedTransaction.codeUnits);
-    // await ethClient.sendRawTransaction(data);
+  Future<void> sendSignedTransaction(Uint8List signedTransaction) async {
+    final ethClient = Web3Client(dotenv.env['NODE_URL']!, Client());
+    await ethClient.sendRawTransaction(signedTransaction);
   }
 
   Future<void> importKey(String importedKey) async {
@@ -214,15 +218,7 @@ class AppState extends ChangeNotifier {
     final roomId = signRecord!.roomId;
 
     final signer = await Signer.create(relayUrl, localShare!, roomId);
-    final signature = await signer.sign(hash);
-
-    final ethSignature = await api.toEthereumSignature(
-      message: message,
-      signature: signature,
-      chain: 97,
-    );
-
-    return ethSignature;
+    return signer.sign(hash);
   }
 
   Future<void> fetchKeys() async {
@@ -247,6 +243,15 @@ class AppState extends ChangeNotifier {
     log('signout');
     refreshToken = null;
     notifyListeners();
+  }
+
+  Future<String> parseTransaction(WCEthereumTransaction tx) async {
+    final ourTransaction = TookeyTransaction.fromJson(tx.toJson())
+    ..chainId = 97
+    ..nonce = '0x1'
+    ..maxPriorityFeePerGas = "0x1";
+
+    return jsonEncode(ourTransaction);
   }
 }
 

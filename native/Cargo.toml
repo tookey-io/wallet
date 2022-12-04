@@ -15,7 +15,7 @@ bigint = ["curv-kzen/num-bigint", "tss/bigint", "tss_ceremonies/bigint", "tookey
 crate-type = ["cdylib", "staticlib"]
 
 [dependencies]
-anyhow = "1"
+anyhow = "1.0.64"
 curv-kzen = { version = "0.9", default-features = false }
 futures = "0.3"
 flutter_rust_bridge = "1"
@@ -27,3 +27,7 @@ tookey_adapter_ethereum = { git = "https://github.com/tookey-io/monorep", rev = 
 tss = { git = "https://github.com/tookey-io/monorep", rev = "f1ab0859d25e513cee872b9592628776c0631a6d", package = "tss", default-features = false  }
 tss_ceremonies = {  git = "https://github.com/tookey-io/monorep", rev = "f1ab0859d25e513cee872b9592628776c0631a6d", package = "tss_ceremonies", default-features = false  }
 hex = "0.4.3"
+
+rlp = "0.5"
+web3 = { version = "0.18.0", default_features = false }
+tookey-libtss = { version = "1.0", default-features = false }
