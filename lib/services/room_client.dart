@@ -19,7 +19,7 @@ class RoomClient {
       exceptionMapper: <T>(Response<T> response, exception) {
         final data = response.data;
         if (data != null && data is Map<String, dynamic>) {
-          return BackendResponseException(
+          return BackendException(
             message: data['message'] as String,
             exception: exception,
           );

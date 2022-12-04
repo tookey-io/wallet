@@ -15,7 +15,7 @@ use curv::BigInt;
 use flutter_rust_bridge::{support, StreamSink};
 use futures::channel::mpsc::Sender;
 use futures::channel::mpsc::{channel, Receiver};
-use futures::{Future, FutureExt, StreamExt, TryFutureExt, TryStreamExt};
+use futures::{Future, StreamExt, TryFutureExt};
 use round_based::{AsyncProtocol, Msg};
 use serde::{Deserialize, Serialize};
 use tokio::runtime::Runtime;
@@ -392,4 +392,16 @@ pub fn receive(id: u32, value: IncomingMessage) -> Result<()> {
         .try_send(value)
         .map_err(|e| anyhow!(format!("Failed send: {:?}", e)))
     // .map_err(|e| anyhow!(format!("Failed send {:?}", e)))
+}
+
+pub fn to_message_hash(tx_request: String) -> Result<String> {
+    crate::ethers::to_message_hash(tx_request)
+}
+
+pub fn convert_to_ethers_signature(tx_request: String, signature: String) -> Result<String> {
+    crate::ethers::convert_to_ethers_signature(tx_request, signature)
+}
+
+pub fn encode_transaction(tx_request: String, signature: String) -> Result<Vec<u8>> {
+    crate::ethers::encode_transaction(tx_request, signature)
 }

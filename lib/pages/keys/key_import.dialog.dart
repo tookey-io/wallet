@@ -69,6 +69,7 @@ class _KeyImportDialogState extends State<KeyImportDialog> {
 
   Future<void> _successDialog(String text) {
     return showDialog(
+      barrierDismissible: false,
       context: context,
       builder: (ctx) => SimpleDialog(
         contentPadding: const EdgeInsets.all(20),

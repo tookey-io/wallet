@@ -1,7 +1,7 @@
 // coverage:ignore-file
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint
-// ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target
+// ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'bridge_generated.dart';
 
@@ -1828,6 +1828,7 @@ abstract class OutgoingMessage_Close implements OutgoingMessage {
 
 /// @nodoc
 mixin _$TookeyScenarios {
+  Object get parties => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
     required TResult Function(int index, int parties, int threashold)
@@ -2042,6 +2043,7 @@ abstract class TookeyScenarios_KeygenECDSA implements TookeyScenarios {
       required final int threashold}) = _$TookeyScenarios_KeygenECDSA;
 
   int get index;
+  @override
   int get parties;
   int get threashold;
   @JsonKey(ignore: true)
@@ -2201,6 +2203,7 @@ abstract class TookeyScenarios_SignECDSA implements TookeyScenarios {
       required final String key,
       required final String hash}) = _$TookeyScenarios_SignECDSA;
 
+  @override
   Uint16List get parties;
   String get key;
   String get hash;

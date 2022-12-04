@@ -2,6 +2,10 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+typedef int64_t DartPort;
+
+typedef bool (*DartPostCObjectFnType)(DartPort port_id, void *message);
+
 typedef struct wire_uint_8_list {
   uint8_t *ptr;
   int32_t len;
@@ -75,9 +79,7 @@ typedef struct WireSyncReturnStruct {
   bool success;
 } WireSyncReturnStruct;
 
-typedef int64_t DartPort;
-
-typedef bool (*DartPostCObjectFnType)(DartPort port_id, void *message);
+void store_dart_post_cobject(DartPostCObjectFnType ptr);
 
 void wire_to_public_key(int64_t port_, struct wire_uint_8_list *key, bool compressed);
 
@@ -97,6 +99,16 @@ void wire_get_next_id(int64_t port_);
 void wire_initialize(int64_t port_, uint32_t id);
 
 void wire_receive(int64_t port_, uint32_t id, struct wire_IncomingMessage *value);
+
+void wire_to_message_hash(int64_t port_, struct wire_uint_8_list *tx_request);
+
+void wire_convert_to_ethers_signature(int64_t port_,
+                                      struct wire_uint_8_list *tx_request,
+                                      struct wire_uint_8_list *signature);
+
+void wire_encode_transaction(int64_t port_,
+                             struct wire_uint_8_list *tx_request,
+                             struct wire_uint_8_list *signature);
 
 void wire_critical__static_method__OutgoingMessage(int64_t port_, struct wire_uint_8_list *message);
 
@@ -126,8 +138,6 @@ union TookeyScenariosKind *inflate_TookeyScenarios_SignECDSA(void);
 
 void free_WireSyncReturnStruct(struct WireSyncReturnStruct val);
 
-void store_dart_post_cobject(DartPostCObjectFnType ptr);
-
 static int64_t dummy_method_to_enforce_bundling(void) {
     int64_t dummy_var = 0;
     dummy_var ^= ((int64_t) (void*) wire_to_public_key);
@@ -138,6 +148,9 @@ static int64_t dummy_method_to_enforce_bundling(void) {
     dummy_var ^= ((int64_t) (void*) wire_get_next_id);
     dummy_var ^= ((int64_t) (void*) wire_initialize);
     dummy_var ^= ((int64_t) (void*) wire_receive);
+    dummy_var ^= ((int64_t) (void*) wire_to_message_hash);
+    dummy_var ^= ((int64_t) (void*) wire_convert_to_ethers_signature);
+    dummy_var ^= ((int64_t) (void*) wire_encode_transaction);
     dummy_var ^= ((int64_t) (void*) wire_critical__static_method__OutgoingMessage);
     dummy_var ^= ((int64_t) (void*) wire_invalid__static_method__OutgoingMessage);
     dummy_var ^= ((int64_t) (void*) new_box_autoadd_incoming_message_0);

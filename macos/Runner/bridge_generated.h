@@ -98,6 +98,16 @@ void wire_initialize(int64_t port_, uint32_t id);
 
 void wire_receive(int64_t port_, uint32_t id, struct wire_IncomingMessage *value);
 
+void wire_to_message_hash(int64_t port_, struct wire_uint_8_list *tx_request);
+
+void wire_convert_to_ethers_signature(int64_t port_,
+                                      struct wire_uint_8_list *tx_request,
+                                      struct wire_uint_8_list *signature);
+
+void wire_encode_transaction(int64_t port_,
+                             struct wire_uint_8_list *tx_request,
+                             struct wire_uint_8_list *signature);
+
 void wire_critical__static_method__OutgoingMessage(int64_t port_, struct wire_uint_8_list *message);
 
 void wire_invalid__static_method__OutgoingMessage(int64_t port_, struct wire_uint_8_list *message);
@@ -138,6 +148,9 @@ static int64_t dummy_method_to_enforce_bundling(void) {
     dummy_var ^= ((int64_t) (void*) wire_get_next_id);
     dummy_var ^= ((int64_t) (void*) wire_initialize);
     dummy_var ^= ((int64_t) (void*) wire_receive);
+    dummy_var ^= ((int64_t) (void*) wire_to_message_hash);
+    dummy_var ^= ((int64_t) (void*) wire_convert_to_ethers_signature);
+    dummy_var ^= ((int64_t) (void*) wire_encode_transaction);
     dummy_var ^= ((int64_t) (void*) wire_critical__static_method__OutgoingMessage);
     dummy_var ^= ((int64_t) (void*) wire_invalid__static_method__OutgoingMessage);
     dummy_var ^= ((int64_t) (void*) new_box_autoadd_incoming_message_0);

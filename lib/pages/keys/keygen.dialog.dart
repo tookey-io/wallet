@@ -7,7 +7,6 @@ import 'package:tookey/services/backend_client.dart';
 import 'package:tookey/state.dart';
 import 'package:tookey/widgets/dialog/dialog_button.dart';
 import 'package:tookey/widgets/dialog/dialog_progress.dart';
-import 'package:tookey/widgets/toaster.dart';
 
 class KeygenDialog extends StatefulWidget {
   const KeygenDialog({super.key});
@@ -17,13 +16,13 @@ class KeygenDialog extends StatefulWidget {
 }
 
 class _KeygenDialogState extends State<KeygenDialog> {
-  Completer<Keystore> keystore = Completer<Keystore>();
+  Completer<Keystore?> keystore = Completer<Keystore?>();
   bool isExecuting = false;
   String? name;
   String? description;
 
   Future<void> _onSubmit(AppState state) async {
-    if (keystore.isCompleted) keystore = Completer<Keystore>();
+    if (keystore.isCompleted) keystore = Completer<Keystore?>();
     if (isExecuting) return;
 
     setState(() {
@@ -35,8 +34,10 @@ class _KeygenDialogState extends State<KeygenDialog> {
       keystore.complete(keys[0]);
       await _successDialog(keys[1]);
     } catch (error) {
-      if (error is BackendResponseException) {
-        if (error.statusCode == 403) await Toaster.error(error.message);
+      if (!keystore.isCompleted) keystore.complete();
+      if (!mounted) return;
+      if (error is BackendException) {
+        await _errorDialog(error.message);
       } else {
         await _errorDialog(error is String ? error : error.toString());
       }
@@ -48,12 +49,13 @@ class _KeygenDialogState extends State<KeygenDialog> {
   }
 
   Future<void> _onCancel() async {
-    keystore.completeError('cancel');
+    if (!keystore.isCompleted) keystore.complete();
     await _errorDialog('Cancelled');
   }
 
   Future<void> _successDialog(Keystore adminKey) {
     return showDialog(
+      barrierDismissible: false,
       context: context,
       builder: (ctx) => SimpleDialog(
         contentPadding: const EdgeInsets.all(20),
@@ -85,7 +87,10 @@ class _KeygenDialogState extends State<KeygenDialog> {
                   DialogButton(
                     title: 'SAVE A BACKUP',
                     onPressed: () async {
-                      await state.shareKey(adminKey.shareableKey);
+                      await state.shareKey(
+                        key: adminKey.shareableKey,
+                        name: adminKey.publicKey,
+                      );
                       if (mounted) {
                         Navigator.pop(context);
                         Navigator.pop(ctx);
@@ -107,6 +112,7 @@ class _KeygenDialogState extends State<KeygenDialog> {
 
   Future<void> _errorDialog(String text) {
     return showDialog(
+      barrierDismissible: false,
       context: context,
       builder: (ctx) => SimpleDialog(
         contentPadding: const EdgeInsets.all(20),

@@ -4,21 +4,69 @@ import 'dart:developer';
 import 'package:dio/dio.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:tookey/services/http_client/http_client.dart';
-import 'package:tookey/widgets/toaster.dart';
 
 part 'backend_client.g.dart';
 
 class BackendClient {
-  BackendClient._create(String? baseUrl) {
+  BackendClient._create({
+    String? baseUrl,
+    AuthToken? refreshToken,
+  }) {
+    _refreshToken = refreshToken;
+    final dio =
+        Dio(BaseOptions(baseUrl: baseUrl ?? '', followRedirects: false));
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (
+          RequestOptions options,
+          RequestInterceptorHandler handler,
+        ) async {
+          if (options.headers['withAuthorization'] == null) {
+            return handler.next(options);
+          }
+
+          options.headers.remove('withAuthorization');
+
+          if (_accessToken != null) {
+            options.headers['Authorization'] = 'Bearer ${_accessToken!.token}';
+          }
+          return handler.next(options);
+        },
+        onError: (DioError e, ErrorInterceptorHandler handler) async {
+          final options = e.requestOptions;
+
+          if (e.response?.statusCode == 401) {
+            if (options.headers['apiKey'] != null) return handler.next(e);
+            await refreshAccessToken();
+
+            options.headers['Authorization'] = 'Bearer ${_accessToken!.token}';
+
+            return await client
+                ?.request<dynamic>(
+                  options.path,
+                  options: Options(
+                    method: options.method,
+                    headers: options.headers,
+                  ),
+                  onReceiveProgress: options.onReceiveProgress,
+                  data: options.data,
+                  queryParameters: options.queryParameters,
+                )
+                .then((response) => handler.resolve(response))
+                .catchError((_) => handler.next(e));
+          }
+
+          handler.next(e);
+        },
+      ),
+    );
+
     client = HttpClient(
-      client: Dio(BaseOptions(baseUrl: baseUrl ?? '')),
+      client: dio,
       exceptionMapper: <T>(Response<T> response, exception) {
         final data = response.data;
         if (data != null && data is Map<String, dynamic>) {
-          if (response.statusCode == 403) {
-            Toaster.error(data['message'] as String);
-          }
-          return BackendResponseException(
+          return BackendException(
             message: data['message'] as String,
             exception: exception,
           );
@@ -28,17 +76,41 @@ class BackendClient {
     );
   }
 
-  late HttpClient client;
+  HttpClient? client;
+  AuthToken? _accessToken;
+  AuthToken? _refreshToken;
 
-  static Future<BackendClient> create({String? baseUrl}) async {
-    final component = BackendClient._create(baseUrl);
+  static Future<BackendClient> create({
+    String? baseUrl,
+    AuthToken? refreshToken,
+  }) async {
+    final component = BackendClient._create(
+      baseUrl: baseUrl,
+      refreshToken: refreshToken,
+    );
     return component;
   }
 
-  Future<AuthTokens> signin(String apiKey) async {
+  Future<void> refreshAccessToken() async {
+    final response = await client!.post<Map<String, dynamic>>(
+      '/api/auth/refresh',
+      options: Options(
+        headers: {
+          'accept': 'application/json',
+          'Authorization': 'Bearer ${_refreshToken!.token}',
+        },
+      ),
+    );
+
+    _accessToken = AuthToken.fromJson(response.data!);
+
+    log('refreshAccessToken ${_accessToken!.token}');
+  }
+
+  Future<AuthToken> signin(String apiKey) async {
     log('signin');
 
-    final response = await client.post<Map<String, dynamic>>(
+    final response = await client!.post<Map<String, dynamic>>(
       '/api/auth/signin',
       options: Options(
         headers: {
@@ -48,18 +120,22 @@ class BackendClient {
       ),
     );
 
-    return AuthTokens.fromJson(response.data!);
+    final authTokens = AuthTokens.fromJson(response.data!);
+    _accessToken = authTokens.access;
+    _refreshToken = authTokens.refresh;
+
+    return authTokens.refresh;
   }
 
-  Future<List<KeyRecord>> fetchKeys(String? token) async {
+  Future<List<KeyRecord>> fetchKeys() async {
     log('fetchKeys');
 
-    final response = await client.get<Map<String, dynamic>>(
+    final response = await client!.get<Map<String, dynamic>>(
       '/api/keys',
       options: Options(
         headers: {
           'accept': 'application/json',
-          'Authorization': 'Bearer $token',
+          'withAuthorization': true,
         },
       ),
     );
@@ -68,14 +144,13 @@ class BackendClient {
     return keys.items;
   }
 
-  Future<KeyRecord> generateKey(
-    String? token, {
+  Future<KeyRecord> generateKey({
     String? name,
     String? description,
   }) async {
     log('generateKey');
 
-    final response = await client.post<Map<String, dynamic>>(
+    final response = await client!.post<Map<String, dynamic>>(
       '/api/keys',
       data: {
         'participantsThreshold': 2,
@@ -88,7 +163,7 @@ class BackendClient {
       options: Options(
         headers: {
           'accept': 'application/json',
-          'Authorization': 'Bearer $token',
+          'withAuthorization': true,
         },
       ),
     );
@@ -97,7 +172,6 @@ class BackendClient {
   }
 
   Future<SignRecord?> signKey(
-    String? token,
     String publicKey,
     String message,
     String hash, {
@@ -105,7 +179,7 @@ class BackendClient {
   }) async {
     log('signKey');
 
-    final response = await client.post<Map<String, dynamic>>(
+    final response = await client!.post<Map<String, dynamic>>(
       '/api/keys/sign',
       data: {
         'publicKey': publicKey,
@@ -116,7 +190,7 @@ class BackendClient {
       options: Options(
         headers: {
           'accept': 'application/json',
-          'Authorization': 'Bearer $token',
+          'withAuthorization': true,
         },
       ),
     );
@@ -125,9 +199,8 @@ class BackendClient {
   }
 }
 
-class BackendResponseException
-    extends NetworkResponseException<Exception, dynamic> {
-  BackendResponseException({
+class BackendException extends NetworkResponseException<Exception, dynamic> {
+  BackendException({
     required this.message,
     required super.exception,
   });

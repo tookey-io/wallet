@@ -171,16 +171,17 @@ class _MyAppState extends State<MyApp> {
       // ),
       home: Consumer<AppState>(
         builder: (context, state, child) {
-          if (state.accessToken == null) {
+          if (state.refreshToken == null) {
             final pattern = RegExp(r'^tookey:\/\/access\/([0-9a-f]+)$');
             if (pattern.hasMatch(_currentUri.toString())) {
               final apiKey =
                   pattern.firstMatch(_currentUri.toString())!.group(1)!;
               state.signin(apiKey);
             }
-            return const AuthPage(title: 'SigneR');
+            return const AuthPage(title: 'Signer');
+          } else {
+            return const KeysPage(title: 'Keys');
           }
-          return const KeysPage(title: 'Keys');
         },
       ),
     );

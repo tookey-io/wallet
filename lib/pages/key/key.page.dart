@@ -1,5 +1,8 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:tookey/pages/key/key.card.dart';
 import 'package:tookey/pages/key/key.popup.dart';
 import 'package:tookey/pages/wallet_connect/wallet_connect.page.dart';
 import 'package:tookey/services/backend_client.dart';
@@ -21,13 +24,14 @@ class _KeyPageState extends State<KeyPage> {
   late Future<String?> _keySecret;
   String? _connectionUrl;
 
-  void _connect(connectionUrl) {
+  void _connect(String? connectionUrl) {
+    log(_connectionUrl!);
     Navigator.push(
       context,
       MaterialPageRoute<WalletConnectPage>(
         builder: (context) {
           return WalletConnectPage(
-            title: widget.keyRecord.name,
+            keyRecord: widget.keyRecord,
             connectionUrl: _connectionUrl!,
           );
         },
@@ -55,16 +59,17 @@ class _KeyPageState extends State<KeyPage> {
 
               if (snapshot.data != '') {
                 return Padding(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(16),
                   child: Column(
                     children: [
+                      KeyCard(keyRecord: widget.keyRecord),
                       const Spacer(),
                       const Icon(
                         Icons.add_link,
                         size: 48,
                         color: Colors.grey,
                       ),
-                      const Padding(padding: EdgeInsets.all(10)),
+                      const Padding(padding: EdgeInsets.all(8)),
                       const Text(
                         'Wallet connect',
                         style: TextStyle(
@@ -72,7 +77,7 @@ class _KeyPageState extends State<KeyPage> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const Padding(padding: EdgeInsets.all(5)),
+                      const Padding(padding: EdgeInsets.all(6)),
                       const Text(
                         'Paste connection url below or use QR scanner',
                       ),
