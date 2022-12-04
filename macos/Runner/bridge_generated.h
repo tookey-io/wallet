@@ -2,10 +2,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-typedef int64_t DartPort;
-
-typedef bool (*DartPostCObjectFnType)(DartPort port_id, void *message);
-
 typedef struct wire_uint_8_list {
   uint8_t *ptr;
   int32_t len;
@@ -79,7 +75,9 @@ typedef struct WireSyncReturnStruct {
   bool success;
 } WireSyncReturnStruct;
 
-void store_dart_post_cobject(DartPostCObjectFnType ptr);
+typedef int64_t DartPort;
+
+typedef bool (*DartPostCObjectFnType)(DartPort port_id, void *message);
 
 void wire_to_public_key(int64_t port_, struct wire_uint_8_list *key, bool compressed);
 
@@ -127,6 +125,8 @@ union TookeyScenariosKind *inflate_TookeyScenarios_KeygenECDSA(void);
 union TookeyScenariosKind *inflate_TookeyScenarios_SignECDSA(void);
 
 void free_WireSyncReturnStruct(struct WireSyncReturnStruct val);
+
+void store_dart_post_cobject(DartPostCObjectFnType ptr);
 
 static int64_t dummy_method_to_enforce_bundling(void) {
     int64_t dummy_var = 0;

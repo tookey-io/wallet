@@ -11,7 +11,6 @@ import 'package:tookey/ffi.dart';
 import 'package:tookey/services/backend_client.dart';
 import 'package:tookey/services/keygen.dart';
 import 'package:tookey/services/signer.dart';
-import 'package:web3dart/web3dart.dart';
 
 String _keysList() => 'storage:KEYS';
 String _key(String id) => 'storage:KEY:$id';
@@ -167,10 +166,12 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> sendSignedTransaction(String signedTransaction) async {
-    final httpClient = Client();
-    final ethClient = Web3Client(nodeUrl, httpClient);
-    final data = Uint8List.fromList(signedTransaction.codeUnits);
-    await ethClient.sendRawTransaction(data);
+    // final provider = ethers.Providers().jsonRpcProvider(url: nodeUrl);
+    // provider.sendTransaction(new TransactionRequest())
+    // final httpClient = Client();
+    // final ethClient = Web3Client(nodeUrl, httpClient);
+    // final data = Uint8List.fromList(signedTransaction.codeUnits);
+    // await ethClient.sendRawTransaction(data);
   }
 
   Future<void> importKey(String importedKey) async {

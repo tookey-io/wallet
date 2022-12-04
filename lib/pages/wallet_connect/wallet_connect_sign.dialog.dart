@@ -11,7 +11,6 @@ import 'package:tookey/widgets/dialog/dialog_button.dart';
 import 'package:tookey/widgets/dialog/dialog_progress.dart';
 import 'package:tookey/widgets/dialog/dialog_title.dart';
 import 'package:tookey/widgets/toaster.dart';
-import 'package:web3dart/web3dart.dart';
 
 class WalletConnectSignDialog extends StatefulWidget {
   const WalletConnectSignDialog({
