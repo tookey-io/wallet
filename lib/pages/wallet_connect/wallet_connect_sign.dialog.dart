@@ -3,6 +3,7 @@ import 'dart:developer';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:tookey/ffi.dart';
@@ -12,7 +13,9 @@ import 'package:tookey/widgets/dialog/dialog_button.dart';
 import 'package:tookey/widgets/dialog/dialog_progress.dart';
 import 'package:tookey/widgets/dialog/dialog_title.dart';
 import 'package:tookey/widgets/toaster.dart';
+import 'package:wallet_connect/utils/hex.dart';
 import 'package:wallet_connect/wallet_connect.dart';
+import 'package:web3dart/web3dart.dart';
 
 class WalletConnectSignDialog extends StatefulWidget {
   const WalletConnectSignDialog({
@@ -59,11 +62,21 @@ class _WalletConnectSignDialogState extends State<WalletConnectSignDialog> {
     });
 
     try {
-      if (widget.tx != null) {
-        final tx = await state.parseTransaction(widget.tx!);
-        final hash = await api.toMessageHash(txRequest: tx);
-        final signature = await state.signKey(widget.tx!.data!, hash, widget.metadata);
-        final encodedTx = await api.encodeTransaction(txRequest: tx, signature: signature);
+      var tx = widget.tx;
+      if (tx != null) {
+        final ethClient = Web3Client(dotenv.env['NODE_URL']!, Client());
+        final gasLimit = await ethClient.estimateGas(
+            sender: EthereumAddress.fromHex(tx.from),
+            to: EthereumAddress.fromHex(tx.to ?? '0x0000000000000000000000000000000000000000'),
+            value: EtherAmount.fromUnitAndValue(EtherUnit.wei, tx.value),
+            data: tx.data != null ? hexToBytes(tx.data!) : null);
+        final nonce = await ethClient.getTransactionCount(EthereumAddress.fromHex(tx.from));
+        final encoded = await state.parseTransaction(WCEthereumTransaction(from: from) widget.tx!);
+        final hash = await api.toMessageHash(txRequest: encoded);
+        final signature =
+            await state.signKey(widget.tx!.data!, hash, widget.metadata);
+        final encodedTx = await api.encodeTransaction(
+            txRequest: encoded, signature: signature);
 
         await Toaster.success('Transaction signed');
         await state
@@ -134,6 +147,9 @@ class _WalletConnectSignDialogState extends State<WalletConnectSignDialog> {
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               children: [
+                Text('To: ${widget.tx?.to}'),
+                Text('Gas limit: ${widget.tx?.gasLimit}'),
+                Text('Gas price: ${widget.tx?.gasPrice}'),
                 Text(widget.data!, style: const TextStyle(fontSize: 16)),
               ],
             ),

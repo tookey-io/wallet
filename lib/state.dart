@@ -249,7 +249,7 @@ class AppState extends ChangeNotifier {
     final ourTransaction = TookeyTransaction.fromJson(tx.toJson())
     ..chainId = 97
     ..nonce = '0x1'
-    ..maxPriorityFeePerGas = "0x1";
+    ..maxPriorityFeePerGas = '0x1';
 
     return jsonEncode(ourTransaction);
   }

@@ -293,7 +293,6 @@ class _WalletConnectPageState extends State<WalletConnectPage> {
             const SizedBox(height: 16),
             Expanded(
               child: Ink(
-                color: Colors.grey[200],
                 child: ListView(
                   padding: const EdgeInsets.all(16),
                   children: [
