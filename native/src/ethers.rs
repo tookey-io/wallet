@@ -1,15 +1,13 @@
 use rlp::RlpStream;
 use web3::types::{AccessList, Recovery, U256, U64};
-
-use std::str::FromStr;
-
 use anyhow::Context;
 use hex::ToHex;
 use serde::{Deserialize, Serialize};
 use tookey_libtss::curv::arithmetic::Integer;
-use tookey_libtss::curv::elliptic::curves::secp256_k1::{Secp256k1Point, Secp256k1Scalar};
-use tookey_libtss::curv::elliptic::curves::{ECPoint, ECScalar, Point, Scalar, Secp256k1};
+use tookey_libtss::curv::elliptic::curves::secp256_k1::{Secp256k1Scalar};
+use tookey_libtss::curv::elliptic::curves::{ECPoint, ECScalar, Scalar, Secp256k1};
 use tookey_libtss::curv::BigInt;
+use tookey_libtss::ecdsa::state_machine::keygen::LocalKey;
 use tookey_libtss::ethereum_types;
 use web3::{
     ethabi::Address,
@@ -69,6 +67,17 @@ pub fn encode_transaction(tx_request: String, signature: String) -> anyhow::Resu
     Ok(transaction.encode(Some(&sig)))
 }
 
+pub fn to_ethereum_address(key: String) -> anyhow::Result<String> {
+    let key: LocalKey<Secp256k1> = serde_json::from_str(&key)?;
+
+    let public_key = key.y_sum_s.as_raw().serialize_uncompressed();
+
+    debug_assert_eq!(public_key[0], 0x04);
+    let hash = keccak256(&public_key[1..]);
+
+    Ok(checksum(Address::from_slice(&hash[12..])))
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct SignatureRecid {
     pub r: Scalar<Secp256k1>,
@@ -76,7 +85,7 @@ pub struct SignatureRecid {
     pub recid: u64,
 }
 
-pub fn sanitize_signature(signature: &mut SignatureRecid, chain: u32) {
+fn sanitize_signature(signature: &mut SignatureRecid, chain: u32) {
     let s = signature.s.to_bigint();
     let n = Secp256k1Scalar::group_order().clone();
     let half_n = n.div_floor(&BigInt::from(2));
@@ -88,6 +97,28 @@ pub fn sanitize_signature(signature: &mut SignatureRecid, chain: u32) {
     if signature.recid <= 3 {
         signature.recid += (chain as u64) * 2 + 35;
     }
+}
+
+/// Gets the checksummed address of a H160 hash
+fn checksum(address: Address) -> String {
+    let address = format!("{:x}", address);
+    let address_hash = format!("{:x}", H256::from(keccak256(address.as_bytes())));
+
+    address
+        .char_indices()
+        .fold(String::from("0x"), |mut acc, (index, address_char)| {
+            let n = u16::from_str_radix(&address_hash[index..index + 1], 16).unwrap();
+
+            if n > 7 {
+                // make char uppercase if ith character is 9..f
+                acc.push_str(&address_char.to_uppercase().to_string())
+            } else {
+                // already lowercased
+                acc.push(address_char)
+            }
+
+            acc
+        })
 }
 
 const LEGACY_TX_ID: u64 = 0;

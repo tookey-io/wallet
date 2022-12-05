@@ -6,6 +6,7 @@ import 'dart:ffi';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_rust_bridge/flutter_rust_bridge.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart';
 import 'package:path/path.dart' as path;
@@ -13,14 +14,14 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:tookey/ffi.dart';
 import 'package:tookey/services/backend_client.dart';
-import 'package:tookey/services/keygen.dart';
-import 'package:tookey/services/signer.dart';
 import 'package:tookey/tookey_transaction.dart';
 import 'package:wallet_connect/models/ethereum/wc_ethereum_transaction.dart';
 import 'package:web3dart/web3dart.dart';
 
 String _keysList() => 'storage:KEYS';
+
 String _key(String id) => 'storage:KEY:$id';
+
 String _refreshTokenStorage() => 'storage:TOKEN:REFRESH';
 
 class AppState extends ChangeNotifier {
@@ -45,6 +46,7 @@ class AppState extends ChangeNotifier {
   }
 
   AuthToken? get refreshToken => _refreshToken;
+
   set refreshToken(AuthToken? value) {
     if (_refreshToken != value) {
       _refreshToken = value;
@@ -62,6 +64,7 @@ class AppState extends ChangeNotifier {
   }
 
   String? get shareableKey => _shareableKey;
+
   set shareableKey(String? value) {
     if (_shareableKey != value) {
       _shareableKey = value;
@@ -70,6 +73,7 @@ class AppState extends ChangeNotifier {
   }
 
   String? get ownerKey => _ownerKey;
+
   set ownerKey(String? value) {
     if (_ownerKey != value) {
       _ownerKey = value;
@@ -181,20 +185,27 @@ class AppState extends ChangeNotifier {
 
     final roomId = keyRecord!.roomId;
 
-    final shareableKeygen = await Keygen.create(2, relayUrl, roomId);
-    final adminKeygen = await Keygen.create(3, relayUrl, roomId);
+    KeygenParams paramsFor(int index) {
+      return KeygenParams(
+        roomId: roomId,
+        participantIndex: index,
+        participantsCount: 3,
+        participantsThreshold: 1,
+        relayAddress: relayUrl,
+        timeoutSeconds: 60,
+      );
+    }
 
-    final results = await Future.wait([
-      shareableKeygen.keygen(),
-      adminKeygen.keygen(),
-    ]);
+    final results = await Future.wait(
+        [api.keygen(params: paramsFor(2)), api.keygen(params: paramsFor(3))]);
 
-    final publicKey = await api.toPublicKey(key: results[0], compressed: true);
+    final publicKey =
+        await api.toPublicKey(key: results[0].key!, compressed: true);
 
     log('Key is $publicKey');
 
-    final shareableKey = Keystore(publicKey, results[0]);
-    final adminKey = Keystore(publicKey, results[1]);
+    final shareableKey = Keystore(publicKey, results[0].key!);
+    final adminKey = Keystore(publicKey, results[1].key!);
 
     await addKey(shareableKey.publicKey, shareableKey.shareableKey);
 
@@ -217,8 +228,15 @@ class AppState extends ChangeNotifier {
 
     final roomId = signRecord!.roomId;
 
-    final signer = await Signer.create(relayUrl, localShare!, roomId);
-    return signer.sign(hash);
+    final params = SignParams(
+        roomId: roomId,
+        key: localShare!,
+        data: hash,
+        participantsIndexes: Uint16List.fromList([1, 2]),
+        relayAddress: relayUrl,
+        timeoutSeconds: 60,);
+    final result = await api.sign(params: params);
+    return result.result!;
   }
 
   Future<void> fetchKeys() async {
@@ -247,9 +265,9 @@ class AppState extends ChangeNotifier {
 
   Future<String> parseTransaction(WCEthereumTransaction tx) async {
     final ourTransaction = TookeyTransaction.fromJson(tx.toJson())
-    ..chainId = 97
-    ..nonce = '0x1'
-    ..maxPriorityFeePerGas = "0x1";
+      ..chainId = 97
+      ..nonce = '0x02'
+      ..maxPriorityFeePerGas = '0x0A';
 
     return jsonEncode(ourTransaction);
   }

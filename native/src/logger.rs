@@ -1,6 +1,6 @@
 use std::sync::Mutex;
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, Result};
 use flutter_rust_bridge::StreamSink;
 
 flutter_rust_bridge::support::lazy_static! {
@@ -8,7 +8,7 @@ flutter_rust_bridge::support::lazy_static! {
 }
 
 pub fn initialize_logger(stream: StreamSink<String>) -> Result<()> {
-    let mut logger = LOGGER.lock().map_err(|e| anyhow!("Failed to log LOGS"))?;
+    let mut logger = LOGGER.lock().map_err(|_e| anyhow!("Failed to log LOGS"))?;
     *logger = Some(stream);
     Ok(())
 }
