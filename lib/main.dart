@@ -13,7 +13,6 @@ import 'package:tookey/pages/auth.page.dart';
 import 'package:tookey/pages/keys/keys.page.dart';
 import 'package:tookey/state.dart';
 import 'package:uni_links/uni_links.dart';
-import 'package:wallet_connect/models/ethereum/wc_ethereum_transaction.dart';
 
 bool _initialUriIsHandled = false;
 
@@ -28,8 +27,6 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
-  // await runTest();
-
   runApp(
     ChangeNotifierProvider(
       create: (context) {
@@ -42,36 +39,6 @@ Future<void> main() async {
     ),
   );
 }
-
-// Future<void> runTest() async {
-//   final wcTx = WCEthereumTransaction(
-//       from: '0xa35272A526B1E5BC846DD553CE7B5b1AEE859D3B',
-//       to: '0xE54358be98B9955f37DeAd1184B01730CaB54faF',
-//       gasPrice: '0x0246139CA80',
-//       gas: '0x05',
-//       value: '0x2386F26FC100',
-//       data: '0x00',);
-//
-//   final state = AppState();
-//   await state.initialize();
-//   state.shareableKey = '03a77fef634819bc50dac355e2f083ddd13f9c39676527712b3a262b07d83b43b3';
-//
-//   if (kDebugMode) {
-//     final tx = await state.parseTransaction(wcTx);
-//     print('TX Parsed');
-//     print(tx);
-//     final hash = await api.toMessageHash(txRequest: tx);
-//     print('Hash: $hash');
-//     final signature = await state.signKey('Metadata', hash, {'test': '1'});
-//     print(signature);
-//     final encodedTx = await api.encodeTransaction(txRequest: tx, signature: signature);
-//     print('Signed tx');
-//     print(encodedTx);
-//
-//     await state.sendSignedTransaction(encodedTx);
-//     print('Sent transaction');
-//   }
-// }
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});

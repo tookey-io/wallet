@@ -279,6 +279,8 @@ class AppState extends ChangeNotifier {
       data: tx.data != null ? hexToBytes(tx.data!) : null,
     );
     log('Gas is $gas');
+    final txGasPrice = tx.gasPrice ?? bytesToHex(intToBytes((await ethClient.getGasPrice()).getInWei));
+    log('GasPrice is $txGasPrice');
     final nonce =
         await ethClient.getTransactionCount(EthereumAddress.fromHex(tx.from));
     log('Nonce is $nonce');
@@ -290,9 +292,11 @@ class AppState extends ChangeNotifier {
     log('json encoded ${jsonEncode(json)}');
 
     final ourTransaction = TookeyTransaction.fromJson(json)
+      // ..chainId = 11155111
       ..chainId = 97
       ..nonce = bytesToHex(intToBytes(BigInt.from(nonce)), include0x: true)
       ..gas = bytesToHex(intToBytes(gas), include0x: true)
+      ..gasPrice = txGasPrice
       ..maxFeePerGas =
           bytesToHex(intToBytes(gasPrice.getInWei), include0x: true)
       ..maxPriorityFeePerGas = bytesToHex(

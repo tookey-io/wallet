@@ -17,7 +17,7 @@ TookeyTransaction _$TookeyTransactionFromJson(Map<String, dynamic> json) =>
       gas: json['gas'] as String?,
       value: json['value'] as String?,
       data: json['data'] as String?,
-      type: json['type'] as String? ?? '0x2',
+      type: json['type'] as String? ?? '0x0',
       gasPrice: json['gasPrice'] as String? ?? '0x0',
     );
 

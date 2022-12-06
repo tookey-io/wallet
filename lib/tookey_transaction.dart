@@ -16,7 +16,7 @@ class TookeyTransaction {
     this.gas,
     this.value,
     this.data,
-    this.type = '0x2',
+    this.type = '0x0',
     this.gasPrice = '0x0',
   });
 
