@@ -166,9 +166,9 @@ class AppState extends ChangeNotifier {
     await Share.shareXFiles([XFile(filePath)], subject: 'Backup Key');
   }
 
-  Future<void> sendSignedTransaction(Uint8List signedTransaction) async {
+  Future<String> sendSignedTransaction(Uint8List signedTransaction) async {
     final ethClient = Web3Client(dotenv.env['NODE_URL']!, Client());
-    await ethClient.sendRawTransaction(signedTransaction);
+    return ethClient.sendRawTransaction(signedTransaction);
   }
 
   Future<void> importKey(String importedKey) async {
