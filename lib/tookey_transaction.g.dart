@@ -12,26 +12,26 @@ TookeyTransaction _$TookeyTransactionFromJson(Map<String, dynamic> json) =>
       chainId: json['chainId'] as int?,
       to: json['to'] as String?,
       nonce: json['nonce'] as String?,
-      gasPrice: json['gasPrice'] as String?,
       maxFeePerGas: json['maxFeePerGas'] as String?,
       maxPriorityFeePerGas: json['maxPriorityFeePerGas'] as String?,
       gas: json['gas'] as String?,
-      gasLimit: json['gasLimit'] as String?,
       value: json['value'] as String?,
       data: json['data'] as String?,
+      type: json['type'] as String? ?? '0x2',
+      gasPrice: json['gasPrice'] as String? ?? '0x0',
     );
 
 Map<String, dynamic> _$TookeyTransactionToJson(TookeyTransaction instance) =>
     <String, dynamic>{
+      'from': instance.from,
       'chainId': instance.chainId,
       'nonce': instance.nonce,
       'maxPriorityFeePerGas': instance.maxPriorityFeePerGas,
-      'from': instance.from,
-      'to': instance.to,
-      'gasPrice': instance.gasPrice,
       'maxFeePerGas': instance.maxFeePerGas,
+      'to': instance.to,
       'gas': instance.gas,
-      'gasLimit': instance.gasLimit,
       'value': instance.value,
       'data': instance.data,
+      'type': instance.type,
+      'gasPrice': instance.gasPrice,
     };

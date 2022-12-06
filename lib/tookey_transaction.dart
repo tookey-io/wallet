@@ -11,29 +11,30 @@ class TookeyTransaction {
     this.chainId,
     this.to,
     this.nonce,
-    this.gasPrice,
     this.maxFeePerGas,
     this.maxPriorityFeePerGas,
     this.gas,
-    this.gasLimit,
     this.value,
     this.data,
+    this.type = '0x2',
+    this.gasPrice = '0x0',
   });
 
   factory TookeyTransaction.fromJson(Map<String, dynamic> json) =>
       _$TookeyTransactionFromJson(json);
+
+  String from;
   int? chainId;
   String? nonce;
   String? maxPriorityFeePerGas;
+  String? maxFeePerGas;
+  String? to;
+  String? gas;
+  String? value;
+  String? data;
+  String type;
+  String gasPrice;
 
-  final String from;
-  final String? to;
-  final String? gasPrice;
-  final String? maxFeePerGas;
-  final String? gas;
-  final String? gasLimit;
-  final String? value;
-  final String? data;
   Map<String, dynamic> toJson() => _$TookeyTransactionToJson(this);
 
   @override

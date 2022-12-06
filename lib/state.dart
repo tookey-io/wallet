@@ -16,6 +16,7 @@ import 'package:tookey/ffi.dart';
 import 'package:tookey/services/backend_client.dart';
 import 'package:tookey/tookey_transaction.dart';
 import 'package:wallet_connect/models/ethereum/wc_ethereum_transaction.dart';
+import 'package:web3dart/crypto.dart';
 import 'package:web3dart/web3dart.dart';
 
 String _keysList() => 'storage:KEYS';
@@ -229,12 +230,13 @@ class AppState extends ChangeNotifier {
     final roomId = signRecord!.roomId;
 
     final params = SignParams(
-        roomId: roomId,
-        key: localShare!,
-        data: hash,
-        participantsIndexes: Uint16List.fromList([1, 2]),
-        relayAddress: relayUrl,
-        timeoutSeconds: 60,);
+      roomId: roomId,
+      key: localShare!,
+      data: hash,
+      participantsIndexes: Uint16List.fromList([1, 2]),
+      relayAddress: relayUrl,
+      timeoutSeconds: 60,
+    );
     final result = await api.sign(params: params);
     return result.result!;
   }
@@ -264,10 +266,39 @@ class AppState extends ChangeNotifier {
   }
 
   Future<String> parseTransaction(WCEthereumTransaction tx) async {
-    final ourTransaction = TookeyTransaction.fromJson(tx.toJson())
+    log("Node is ${dotenv.env['NODE_URL']!}");
+    final ethClient = Web3Client(dotenv.env['NODE_URL']!, Client());
+    log('Chain is ${await ethClient.getNetworkId()}');
+    log('Balace is ${await ethClient.getBalance(EthereumAddress.fromHex(tx.from))}');
+    final gas = await ethClient.estimateGas(
+      sender: EthereumAddress.fromHex(tx.from),
+      to: EthereumAddress.fromHex(
+        tx.to ?? '0x0000000000000000000000000000000000000000',
+      ),
+      value: EtherAmount.fromUnitAndValue(EtherUnit.wei, tx.value),
+      data: tx.data != null ? hexToBytes(tx.data!) : null,
+    );
+    log('Gas is $gas');
+    final nonce =
+        await ethClient.getTransactionCount(EthereumAddress.fromHex(tx.from));
+    log('Nonce is $nonce');
+    final gasPrice = await ethClient.getGasPrice();
+    log('Gas price is $gasPrice');
+
+    final json = tx.toJson();
+
+    log('json encoded ${jsonEncode(json)}');
+
+    final ourTransaction = TookeyTransaction.fromJson(json)
       ..chainId = 97
-      ..nonce = '0x02'
-      ..maxPriorityFeePerGas = '0x0A';
+      ..nonce = bytesToHex(intToBytes(BigInt.from(nonce)), include0x: true)
+      ..gas = bytesToHex(intToBytes(gas), include0x: true)
+      ..maxFeePerGas =
+          bytesToHex(intToBytes(gasPrice.getInWei), include0x: true)
+      ..maxPriorityFeePerGas = bytesToHex(
+        intToBytes(gasPrice.getInWei + BigInt.from(1000000000)),
+        include0x: true,
+      );
 
     return jsonEncode(ourTransaction);
   }

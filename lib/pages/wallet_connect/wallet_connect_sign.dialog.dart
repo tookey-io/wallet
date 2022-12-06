@@ -61,22 +61,14 @@ class _WalletConnectSignDialogState extends State<WalletConnectSignDialog> {
       isExecuting = true;
     });
 
-    try {
-      var tx = widget.tx;
-      if (tx != null) {
-        final ethClient = Web3Client(dotenv.env['NODE_URL']!, Client());
-        final gasLimit = await ethClient.estimateGas(
-            sender: EthereumAddress.fromHex(tx.from),
-            to: EthereumAddress.fromHex(tx.to ?? '0x0000000000000000000000000000000000000000'),
-            value: EtherAmount.fromUnitAndValue(EtherUnit.wei, tx.value),
-            data: tx.data != null ? hexToBytes(tx.data!) : null);
-        final nonce = await ethClient.getTransactionCount(EthereumAddress.fromHex(tx.from));
-        final encoded = await state.parseTransaction(WCEthereumTransaction(from: from) widget.tx!);
-        final hash = await api.toMessageHash(txRequest: encoded);
-        final signature =
-            await state.signKey(widget.tx!.data!, hash, widget.metadata);
-        final encodedTx = await api.encodeTransaction(
-            txRequest: encoded, signature: signature);
+    // try {
+      if (widget.tx != null) {
+        log('start parse ${widget.tx}');
+        final tx = await state.parseTransaction(widget.tx!);
+        log("parsedtx: $tx");
+        final hash = await api.toMessageHash(txRequest: tx);
+        final signature = await state.signKey(widget.tx!.data!, hash, widget.metadata);
+        final encodedTx = await api.encodeTransaction(txRequest: tx, signature: signature);
 
         await Toaster.success('Transaction signed');
         await state
@@ -100,15 +92,15 @@ class _WalletConnectSignDialogState extends State<WalletConnectSignDialog> {
         // signJoinHandle.complete(signedTransaction);
         // widget.onSign(result: signedTransaction);
       }
-    } catch (error) {
-      if (error is BackendException) {
-        await Toaster.error(error.message);
-      } else {
-        await Toaster.error('Failed');
-      }
-      signJoinHandle.complete();
-      widget.onSign();
-    }
+    // } catch (error) {
+    //   if (error is BackendException) {
+    //     await Toaster.error(error.message);
+    //   } else {
+    //     await Toaster.error('Failed');
+    //   }
+    //   signJoinHandle.complete();
+    //   widget.onSign();
+    // }
 
     setState(() {
       isExecuting = false;
