@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:developer';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart';
@@ -61,49 +62,49 @@ class _WalletConnectSignDialogState extends State<WalletConnectSignDialog> {
       isExecuting = true;
     });
 
-    // try {
-    if (widget.tx != null) {
-      log('start parse ${widget.tx}');
-      final tx = await state.parseTransaction(widget.tx!);
-      log('parsedtx: $tx');
-      final hash = await api.toMessageHash(txRequest: tx);
-      final signature =
-          await state.signKey(widget.tx!.data!, hash, widget.metadata);
-      final encodedTx =
-          await api.encodeTransaction(txRequest: tx, signature: signature);
+    try {
+      if (widget.tx != null) {
+        log('start parse ${widget.tx}');
+        final tx = await state.parseTransaction(widget.tx!);
+        log('parsedtx: $tx');
+        final hash = await api.toMessageHash(txRequest: tx);
+        final signature =
+            await state.signKey(widget.tx!.data!, hash, widget.metadata);
+        final encodedTx =
+            await api.encodeTransaction(txRequest: tx, signature: signature);
 
-      await Toaster.success('Transaction signed');
-      await state.sendSignedTransaction(encodedTx).then((value) {
-        Toaster.success('Transaction successfully sent');
-        signJoinHandle.complete(value);
-        widget.onSign(result: value);
-      }).catchError((error) {
-        Toaster.error('Transaction send fail');
-      });
+        await Toaster.success('Transaction signed');
+        await state.sendSignedTransaction(encodedTx).then((value) {
+          Toaster.success('Transaction successfully sent');
+          signJoinHandle.complete(value);
+          widget.onSign(result: value);
+        }).catchError((error) {
+          Toaster.error('Transaction send fail');
+        });
+      }
+      if (widget.message != null) {
+        // TODO(temadev): implement
+        // final hash = await api.messageToHash(message: widget.tx!.data!);
+        // final signedTransaction =
+        //     await state.signKey(widget.tx!.data!, hash, widget.metadata);
+        //
+        // await Toaster.success('Transaction signed');
+        // await state
+        //     .sendSignedTransaction(signedTransaction)
+        //     .then((value) => Toaster.success('Transaction successfully sent'))
+        //     .catchError((error) => Toaster.error('Transaction send fail'));
+        // signJoinHandle.complete(signedTransaction);
+        // widget.onSign(result: signedTransaction);
+      }
+    } catch (error) {
+      if (error is BackendException) {
+        await Toaster.error(error.message);
+      } else {
+        await Toaster.error('Failed');
+      }
+      signJoinHandle.complete();
+      widget.onSign();
     }
-    if (widget.message != null) {
-      // TODO(temadev): implement
-      // final hash = await api.messageToHash(message: widget.tx!.data!);
-      // final signedTransaction =
-      //     await state.signKey(widget.tx!.data!, hash, widget.metadata);
-      //
-      // await Toaster.success('Transaction signed');
-      // await state
-      //     .sendSignedTransaction(signedTransaction)
-      //     .then((value) => Toaster.success('Transaction successfully sent'))
-      //     .catchError((error) => Toaster.error('Transaction send fail'));
-      // signJoinHandle.complete(signedTransaction);
-      // widget.onSign(result: signedTransaction);
-    }
-    // } catch (error) {
-    //   if (error is BackendException) {
-    //     await Toaster.error(error.message);
-    //   } else {
-    //     await Toaster.error('Failed');
-    //   }
-    //   signJoinHandle.complete();
-    //   widget.onSign();
-    // }
 
     setState(() {
       isExecuting = false;
@@ -128,7 +129,7 @@ class _WalletConnectSignDialogState extends State<WalletConnectSignDialog> {
           padding: const EdgeInsets.only(bottom: 8),
           child: const Text(
             'Sign Message',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
           ),
         ),
         Theme(
@@ -139,13 +140,22 @@ class _WalletConnectSignDialogState extends State<WalletConnectSignDialog> {
               tilePadding: EdgeInsets.zero,
               title: const Text(
                 'Message',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                style: TextStyle(fontSize: 16),
               ),
               children: [
-                Text('To: ${widget.tx?.to}'),
-                Text('Gas limit: ${widget.tx?.gasLimit}'),
-                Text('Gas price: ${widget.tx?.gasPrice}'),
-                Text(widget.data!, style: const TextStyle(fontSize: 16)),
+                Text(
+                  [
+                    'To: ${widget.tx?.to}',
+                    'Gas limit: ${widget.tx?.gasLimit}',
+                    'Gas price: ${widget.tx?.gasPrice}',
+                    widget.data!
+                  ].join('\n'),
+                  textAlign: TextAlign.left,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontFamily: Platform.isIOS ? 'Courier' : 'monospace',
+                  ),
+                ),
               ],
             ),
           ),
@@ -158,8 +168,7 @@ class _WalletConnectSignDialogState extends State<WalletConnectSignDialog> {
                   title: 'SIGN',
                   onPressed: () => _onSign(state),
                   buttonStyle: TextButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    backgroundColor: Theme.of(context).colorScheme.secondary,
+                    foregroundColor: Theme.of(context).colorScheme.secondary,
                   ),
                   expanded: true,
                 ),
@@ -168,8 +177,7 @@ class _WalletConnectSignDialogState extends State<WalletConnectSignDialog> {
                   title: 'REJECT',
                   onPressed: widget.onReject,
                   buttonStyle: TextButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    backgroundColor: Theme.of(context).colorScheme.secondary,
+                    foregroundColor: Theme.of(context).colorScheme.error,
                   ),
                   expanded: true,
                 ),

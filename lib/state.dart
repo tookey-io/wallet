@@ -43,7 +43,7 @@ class AppState extends ChangeNotifier {
       baseUrl: backendApiUrl,
       refreshToken: _refreshToken,
     );
-    await fetchKeys();
+    // await fetchKeys();
   }
 
   AuthToken? get refreshToken => _refreshToken;
@@ -218,12 +218,16 @@ class AppState extends ChangeNotifier {
     String hash,
     Map<String, dynamic>? metadata,
   ) async {
+    log('Waiting for approve in telegram');
+
     final signRecord = await backend?.signKey(
       shareableKey!,
       message,
       hash,
       metadata: metadata,
     );
+
+    log('Approved');
 
     final localShare = await readShareableKey();
 
@@ -238,6 +242,7 @@ class AppState extends ChangeNotifier {
       timeoutSeconds: 60,
     );
     final result = await api.sign(params: params);
+    if (result.result == null) throw Exception(result.error);
     return result.result!;
   }
 
@@ -250,7 +255,7 @@ class AppState extends ChangeNotifier {
             .where((key) => key.publicKey != '')
             .map((element) => MapEntry(element.publicKey, element)),
       );
-    notifyListeners();
+    // notifyListeners();
   }
 
   Future<void> signin(String apiKey) async {
@@ -279,7 +284,8 @@ class AppState extends ChangeNotifier {
       data: tx.data != null ? hexToBytes(tx.data!) : null,
     );
     log('Gas is $gas');
-    final txGasPrice = tx.gasPrice ?? bytesToHex(intToBytes((await ethClient.getGasPrice()).getInWei));
+    final txGasPrice = tx.gasPrice ??
+        bytesToHex(intToBytes((await ethClient.getGasPrice()).getInWei));
     log('GasPrice is $txGasPrice');
     final nonce =
         await ethClient.getTransactionCount(EthereumAddress.fromHex(tx.from));

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 // ignore: always_use_package_imports
 import 'http_client_exceptions.dart';
@@ -11,7 +13,7 @@ typedef HttpLibraryMethod<T> = Future<Response<T>> Function();
 /// an optional [HttpClientException], optionally mapping the response
 /// to a custom exception.
 typedef ResponseExceptionMapper = NetworkResponseException<Exception, dynamic>?
-    Function<T>(Response<T>, Exception);
+    Function<T>(Response<T>?, DioError);
 
 /// Dio HTTP Wrapper with convenient, predictable exception handling.
 class HttpClient {
@@ -212,6 +214,11 @@ class HttpClient {
                 data: response.data,
               );
         case DioErrorType.other:
+          if (exception.error is SocketException) {
+            throw exceptionMapper?.call(null, exception) ??
+                NetworkResponseException(exception: exception);
+          }
+          throw HttpClientException(exception: exception);
         // ignore: no_default_cases
         default:
           throw HttpClientException(exception: exception);
