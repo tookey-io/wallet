@@ -187,43 +187,43 @@ class _WalletConnectPageState extends State<WalletConnectPage> {
   }
 
   Future<void> _onEthSign(int id, WCEthereumSignMessage message) async {
-    // log('_onEthSign: $message');
-    // logEvent('[$id] Sign message', type: EventLogType.warning);
-    // logEvent('raw: ${message.raw}');
-    // logEvent('type: ${message.type}');
-    //
-    // final decoded = (message.type == WCSignType.TYPED_MESSAGE)
-    //     ? message.data!
-    //     : ascii.decode(hexToBytes(message.data!));
-    //
-    // return showDialog(
-    //   barrierDismissible: false,
-    //   context: context,
-    //   builder: (context) {
-    //     return WalletConnectSignDialog(
-    //       title: _wcClient!.remotePeerMeta!.name,
-    //       icon: _wcClient!.remotePeerMeta!.icons.first,
-    //       message: message,
-    //       data: decoded,
-    //       metadata: _wcSessionStore?.remotePeerMeta.toJson(),
-    //       onSign: ({result}) {
-    //         // if (message.type == WCSignType.TYPED_MESSAGE) {
-    //         //   throw 'Not implemented yet';
-    //         // }
-    //
-    //         if (result != null) {
-    //           _wcClient?.approveRequest(id: id, result: result);
-    //         }
-    //
-    //         if (mounted) Navigator.pop(context);
-    //       },
-    //       onReject: () {
-    //         _wcClient?.rejectRequest(id: id);
-    //         Navigator.pop(context);
-    //       },
-    //     );
-    //   },
-    // );
+    log('_onEthSign: $message');
+    logEvent('[$id] Sign message', type: EventLogType.warning);
+    logEvent('raw: ${message.raw}');
+    logEvent('type: ${message.type}');
+
+    final decoded = (message.type == WCSignType.TYPED_MESSAGE)
+        ? message.data!
+        : ascii.decode(hexToBytes(message.data!));
+
+    return showDialog(
+      barrierDismissible: false,
+      context: context,
+      builder: (context) {
+        return WalletConnectSignDialog(
+          title: _wcClient!.remotePeerMeta!.name,
+          icon: _wcClient!.remotePeerMeta!.icons.first,
+          message: message,
+          data: decoded,
+          metadata: _wcSessionStore?.remotePeerMeta.toJson(),
+          onSign: ({result}) {
+            // if (message.type == WCSignType.TYPED_MESSAGE) {
+            //   throw 'Not implemented yet';
+            // }
+
+            if (result != null) {
+              _wcClient?.approveRequest(id: id, result: result);
+            }
+
+            if (mounted) Navigator.pop(context);
+          },
+          onReject: () {
+            _wcClient?.rejectRequest(id: id);
+            Navigator.pop(context);
+          },
+        );
+      },
+    );
   }
 
   Future<void> _onSessionRequest(int id, WCPeerMeta peerMeta) async {
@@ -240,13 +240,15 @@ class _WalletConnectPageState extends State<WalletConnectPage> {
         return WalletConnectSessionDialog(
           peerMeta: peerMeta,
           onApprove: (state) async {
-            setState(() {
-              _wcSessionStore = _wcClient?.sessionStore;
-            });
-
             final address = await state!.getShareableAddress();
             if (address != null) {
-              _wcClient?.approveSession(accounts: [address], chainId: 97);
+              _wcClient?.approveSession(
+                  accounts: [address], chainId: await state.chainId());
+
+              setState(() {
+                _wcSessionStore = _wcClient?.sessionStore;
+              });
+
               logEvent('[$id] Connection approved', type: EventLogType.success);
             }
 

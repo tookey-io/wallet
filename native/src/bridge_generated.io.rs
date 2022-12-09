@@ -17,17 +17,23 @@ pub extern "C" fn wire_to_ethereum_address(port_: i64, key: *mut wire_uint_8_lis
 }
 
 #[no_mangle]
-pub extern "C" fn wire_to_message_hash(port_: i64, tx_request: *mut wire_uint_8_list) {
-    wire_to_message_hash_impl(port_, tx_request)
+pub extern "C" fn wire_transaction_to_message_hash(port_: i64, tx_request: *mut wire_uint_8_list) {
+    wire_transaction_to_message_hash_impl(port_, tx_request)
 }
 
 #[no_mangle]
-pub extern "C" fn wire_convert_to_ethers_signature(
+pub extern "C" fn wire_message_to_hash(port_: i64, data: *mut wire_uint_8_list) {
+    wire_message_to_hash_impl(port_, data)
+}
+
+#[no_mangle]
+pub extern "C" fn wire_encode_message_sign(
     port_: i64,
-    tx_request: *mut wire_uint_8_list,
+    data: *mut wire_uint_8_list,
+    chain_id: u32,
     signature: *mut wire_uint_8_list,
 ) {
-    wire_convert_to_ethers_signature_impl(port_, tx_request, signature)
+    wire_encode_message_sign_impl(port_, data, chain_id, signature)
 }
 
 #[no_mangle]

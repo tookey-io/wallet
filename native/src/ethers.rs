@@ -1,48 +1,47 @@
-use rlp::RlpStream;
-use web3::types::{AccessList, Recovery, U256, U64};
 use anyhow::Context;
 use hex::ToHex;
+use rlp::RlpStream;
 use serde::{Deserialize, Serialize};
 use tookey_libtss::curv::arithmetic::Integer;
-use tookey_libtss::curv::elliptic::curves::secp256_k1::{Secp256k1Scalar};
+use tookey_libtss::curv::elliptic::curves::secp256_k1::Secp256k1Scalar;
 use tookey_libtss::curv::elliptic::curves::{ECPoint, ECScalar, Scalar, Secp256k1};
 use tookey_libtss::curv::BigInt;
 use tookey_libtss::ecdsa::state_machine::keygen::LocalKey;
 use tookey_libtss::ethereum_types;
+use web3::types::{AccessList, Recovery, U256, U64};
 use web3::{
     ethabi::Address,
     signing::keccak256,
     types::{Bytes, H256},
 };
 
-pub fn to_message_hash(tx_request: String) -> anyhow::Result<String> {
+pub fn transaction_to_message_hash(tx_request: String) -> anyhow::Result<String> {
     let transaction: Transaction = serde_json::from_str(&tx_request)?;
 
     let message = transaction.encode(None);
+    message_to_hash(String::from("0x") + &hex::encode(message))
+}
+
+pub fn message_to_hash(data: String) -> anyhow::Result<String> {
+    let message = bytes_from_hex(data)?;
     let message_hash = H256::from(keccak256(&message));
 
     Ok(String::from("0x") + &message_hash.encode_hex::<String>())
 }
 
-pub fn convert_to_ethers_signature(
-    tx_request: String,
-    signature: String,
-) -> anyhow::Result<String> {
-    let transaction: Transaction = serde_json::from_str(&tx_request)?;
+pub fn encode_message_sign(data: String, chain_id: u32, signature: String) -> anyhow::Result<String> {
     let mut signature: SignatureRecid = serde_json::from_str(&signature)?;
 
-    sanitize_signature(&mut signature, transaction.chain_id as u32);
+    sanitize_signature(&mut signature, chain_id);
 
     let rec = Recovery::new(
-        transaction.encode(None),
-        signature.recid.into(),
+        bytes_from_hex(data)?,
+        signature.recid,
         H256::from_slice(signature.r.to_bytes().as_ref()),
         H256::from_slice(signature.s.to_bytes().as_ref()),
     );
 
-    let (signature, v) = rec
-        .as_signature()
-        .context("failed take signature from recoverable")?;
+    let (signature, v) = rec.as_signature().context("failed take signature from recoverable")?;
 
     let mut slice: [u8; 65] = [0u8; 65];
 
@@ -56,7 +55,7 @@ pub fn encode_transaction(tx_request: String, signature: String) -> anyhow::Resu
     let transaction: Transaction = serde_json::from_str(&tx_request)?;
     let mut signature: SignatureRecid = serde_json::from_str(&signature)?;
 
-    sanitize_signature(&mut signature, transaction.chain_id as u32);
+    sanitize_signature(&mut signature, transaction.chain_id.as_u32());
 
     let sig = Signature {
         v: signature.recid,
@@ -76,6 +75,16 @@ pub fn to_ethereum_address(key: String) -> anyhow::Result<String> {
     let hash = keccak256(&public_key[1..]);
 
     Ok(checksum(Address::from_slice(&hash[12..])))
+}
+
+fn bytes_from_hex(data: String) -> anyhow::Result<Vec<u8>> {
+    let result = if data.starts_with("0x") {
+        hex::decode(data.strip_prefix("0x").unwrap())?
+    } else {
+        hex::decode(data)?
+    };
+
+    Ok(result)
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -134,24 +143,13 @@ pub struct Signature {
     /// S component of the signature.
     pub s: H256,
 }
-// {from: 0x3cdb4a4ea186e1198dec7bc867858998f5606ac9,
-// to: 0xd99d1c33f9fc3444f8101754abc46c52416550d1,
-// nonce: null,
-// gasPrice: 0x2540be400,
-// maxFeePerGas: null,
-// maxPriorityFeePerGas: null,
-// gas: 0x28ae2,
-// gasLimit: null,
-// value: 0x1b33519d8fc4000,
-// data: 0x7ff36ab5000000000000000000000000000000000000011b88bad8eb9b46c6c2b1e4e9fa00000000000000000000000000000000000000000000000000000000000000800000000000000000000000003cdb4a4ea186e1198dec7bc867858998f5606ac9000000000000000000000000000000000000000000000000000000006385ead90000000000000000000000000000000000000000000000000000000000000002000000000000000000000000ae13d989dac2f0debff460ac112a837c89baa7cd000000000000000000000000fa60d973f7642b748046464e165a65b7323b0dee
-// }
 
 /// A transaction used for RLP encoding, hashing and signing.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Transaction {
     /// Chain ID
     #[serde(rename = "chainId")]
-    pub chain_id: u64,
+    pub chain_id: U64,
     /// Recipient address (None for contract creation)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub to: Option<Address>,

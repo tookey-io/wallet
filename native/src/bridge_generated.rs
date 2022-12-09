@@ -62,34 +62,49 @@ fn wire_to_ethereum_address_impl(port_: MessagePort, key: impl Wire2Api<String> 
         },
     )
 }
-fn wire_to_message_hash_impl(port_: MessagePort, tx_request: impl Wire2Api<String> + UnwindSafe) {
+fn wire_transaction_to_message_hash_impl(port_: MessagePort, tx_request: impl Wire2Api<String> + UnwindSafe) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {
-            debug_name: "to_message_hash",
+            debug_name: "transaction_to_message_hash",
             port: Some(port_),
             mode: FfiCallMode::Normal,
         },
         move || {
             let api_tx_request = tx_request.wire2api();
-            move |task_callback| to_message_hash(api_tx_request)
+            move |task_callback| transaction_to_message_hash(api_tx_request)
         },
     )
 }
-fn wire_convert_to_ethers_signature_impl(
+fn wire_message_to_hash_impl(port_: MessagePort, data: impl Wire2Api<String> + UnwindSafe) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "message_to_hash",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_data = data.wire2api();
+            move |task_callback| message_to_hash(api_data)
+        },
+    )
+}
+fn wire_encode_message_sign_impl(
     port_: MessagePort,
-    tx_request: impl Wire2Api<String> + UnwindSafe,
+    data: impl Wire2Api<String> + UnwindSafe,
+    chain_id: impl Wire2Api<u32> + UnwindSafe,
     signature: impl Wire2Api<String> + UnwindSafe,
 ) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {
-            debug_name: "convert_to_ethers_signature",
+            debug_name: "encode_message_sign",
             port: Some(port_),
             mode: FfiCallMode::Normal,
         },
         move || {
-            let api_tx_request = tx_request.wire2api();
+            let api_data = data.wire2api();
+            let api_chain_id = chain_id.wire2api();
             let api_signature = signature.wire2api();
-            move |task_callback| convert_to_ethers_signature(api_tx_request, api_signature)
+            move |task_callback| encode_message_sign(api_data, api_chain_id, api_signature)
         },
     )
 }
@@ -186,6 +201,11 @@ impl Wire2Api<bool> for bool {
 
 impl Wire2Api<u16> for u16 {
     fn wire2api(self) -> u16 {
+        self
+    }
+}
+impl Wire2Api<u32> for u32 {
+    fn wire2api(self) -> u32 {
         self
     }
 }

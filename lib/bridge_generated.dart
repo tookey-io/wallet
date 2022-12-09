@@ -11,6 +11,9 @@ import 'package:meta/meta.dart';
 import 'dart:ffi' as ffi;
 
 abstract class Native {
+  ///
+  /// Public interface
+  ///
   Stream<String> connectLogger({dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kConnectLoggerConstMeta;
@@ -24,14 +27,22 @@ abstract class Native {
 
   FlutterRustBridgeTaskConstMeta get kToEthereumAddressConstMeta;
 
-  Future<String> toMessageHash({required String txRequest, dynamic hint});
+  Future<String> transactionToMessageHash(
+      {required String txRequest, dynamic hint});
 
-  FlutterRustBridgeTaskConstMeta get kToMessageHashConstMeta;
+  FlutterRustBridgeTaskConstMeta get kTransactionToMessageHashConstMeta;
 
-  Future<String> convertToEthersSignature(
-      {required String txRequest, required String signature, dynamic hint});
+  Future<String> messageToHash({required String data, dynamic hint});
 
-  FlutterRustBridgeTaskConstMeta get kConvertToEthersSignatureConstMeta;
+  FlutterRustBridgeTaskConstMeta get kMessageToHashConstMeta;
+
+  Future<String> encodeMessageSign(
+      {required String data,
+      required int chainId,
+      required String signature,
+      dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kEncodeMessageSignConstMeta;
 
   Future<Uint8List> encodeTransaction(
       {required String txRequest, required String signature, dynamic hint});
@@ -164,41 +175,64 @@ class NativeImpl implements Native {
         argNames: ["key"],
       );
 
-  Future<String> toMessageHash({required String txRequest, dynamic hint}) {
+  Future<String> transactionToMessageHash(
+      {required String txRequest, dynamic hint}) {
     var arg0 = _platform.api2wire_String(txRequest);
     return _platform.executeNormal(FlutterRustBridgeTask(
-      callFfi: (port_) => _platform.inner.wire_to_message_hash(port_, arg0),
+      callFfi: (port_) =>
+          _platform.inner.wire_transaction_to_message_hash(port_, arg0),
       parseSuccessData: _wire2api_String,
-      constMeta: kToMessageHashConstMeta,
+      constMeta: kTransactionToMessageHashConstMeta,
       argValues: [txRequest],
       hint: hint,
     ));
   }
 
-  FlutterRustBridgeTaskConstMeta get kToMessageHashConstMeta =>
+  FlutterRustBridgeTaskConstMeta get kTransactionToMessageHashConstMeta =>
       const FlutterRustBridgeTaskConstMeta(
-        debugName: "to_message_hash",
+        debugName: "transaction_to_message_hash",
         argNames: ["txRequest"],
       );
 
-  Future<String> convertToEthersSignature(
-      {required String txRequest, required String signature, dynamic hint}) {
-    var arg0 = _platform.api2wire_String(txRequest);
-    var arg1 = _platform.api2wire_String(signature);
+  Future<String> messageToHash({required String data, dynamic hint}) {
+    var arg0 = _platform.api2wire_String(data);
     return _platform.executeNormal(FlutterRustBridgeTask(
-      callFfi: (port_) =>
-          _platform.inner.wire_convert_to_ethers_signature(port_, arg0, arg1),
+      callFfi: (port_) => _platform.inner.wire_message_to_hash(port_, arg0),
       parseSuccessData: _wire2api_String,
-      constMeta: kConvertToEthersSignatureConstMeta,
-      argValues: [txRequest, signature],
+      constMeta: kMessageToHashConstMeta,
+      argValues: [data],
       hint: hint,
     ));
   }
 
-  FlutterRustBridgeTaskConstMeta get kConvertToEthersSignatureConstMeta =>
+  FlutterRustBridgeTaskConstMeta get kMessageToHashConstMeta =>
       const FlutterRustBridgeTaskConstMeta(
-        debugName: "convert_to_ethers_signature",
-        argNames: ["txRequest", "signature"],
+        debugName: "message_to_hash",
+        argNames: ["data"],
+      );
+
+  Future<String> encodeMessageSign(
+      {required String data,
+      required int chainId,
+      required String signature,
+      dynamic hint}) {
+    var arg0 = _platform.api2wire_String(data);
+    var arg1 = api2wire_u32(chainId);
+    var arg2 = _platform.api2wire_String(signature);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) =>
+          _platform.inner.wire_encode_message_sign(port_, arg0, arg1, arg2),
+      parseSuccessData: _wire2api_String,
+      constMeta: kEncodeMessageSignConstMeta,
+      argValues: [data, chainId, signature],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kEncodeMessageSignConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "encode_message_sign",
+        argNames: ["data", "chainId", "signature"],
       );
 
   Future<Uint8List> encodeTransaction(
@@ -303,6 +337,11 @@ bool api2wire_bool(bool raw) {
 
 @protected
 int api2wire_u16(int raw) {
+  return raw;
+}
+
+@protected
+int api2wire_u32(int raw) {
   return raw;
 }
 
@@ -473,43 +512,65 @@ class NativeWire implements FlutterRustBridgeWireBase {
   late final _wire_to_ethereum_address = _wire_to_ethereum_addressPtr
       .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
 
-  void wire_to_message_hash(
+  void wire_transaction_to_message_hash(
     int port_,
     ffi.Pointer<wire_uint_8_list> tx_request,
   ) {
-    return _wire_to_message_hash(
+    return _wire_transaction_to_message_hash(
       port_,
       tx_request,
     );
   }
 
-  late final _wire_to_message_hashPtr = _lookup<
+  late final _wire_transaction_to_message_hashPtr = _lookup<
+          ffi.NativeFunction<
+              ffi.Void Function(ffi.Int64, ffi.Pointer<wire_uint_8_list>)>>(
+      'wire_transaction_to_message_hash');
+  late final _wire_transaction_to_message_hash =
+      _wire_transaction_to_message_hashPtr
+          .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
+
+  void wire_message_to_hash(
+    int port_,
+    ffi.Pointer<wire_uint_8_list> data,
+  ) {
+    return _wire_message_to_hash(
+      port_,
+      data,
+    );
+  }
+
+  late final _wire_message_to_hashPtr = _lookup<
       ffi.NativeFunction<
           ffi.Void Function(ffi.Int64,
-              ffi.Pointer<wire_uint_8_list>)>>('wire_to_message_hash');
-  late final _wire_to_message_hash = _wire_to_message_hashPtr
+              ffi.Pointer<wire_uint_8_list>)>>('wire_message_to_hash');
+  late final _wire_message_to_hash = _wire_message_to_hashPtr
       .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
 
-  void wire_convert_to_ethers_signature(
+  void wire_encode_message_sign(
     int port_,
-    ffi.Pointer<wire_uint_8_list> tx_request,
+    ffi.Pointer<wire_uint_8_list> data,
+    int chain_id,
     ffi.Pointer<wire_uint_8_list> signature,
   ) {
-    return _wire_convert_to_ethers_signature(
+    return _wire_encode_message_sign(
       port_,
-      tx_request,
+      data,
+      chain_id,
       signature,
     );
   }
 
-  late final _wire_convert_to_ethers_signaturePtr = _lookup<
-          ffi.NativeFunction<
-              ffi.Void Function(ffi.Int64, ffi.Pointer<wire_uint_8_list>,
-                  ffi.Pointer<wire_uint_8_list>)>>(
-      'wire_convert_to_ethers_signature');
-  late final _wire_convert_to_ethers_signature =
-      _wire_convert_to_ethers_signaturePtr.asFunction<
-          void Function(int, ffi.Pointer<wire_uint_8_list>,
+  late final _wire_encode_message_signPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(
+              ffi.Int64,
+              ffi.Pointer<wire_uint_8_list>,
+              ffi.Uint32,
+              ffi.Pointer<wire_uint_8_list>)>>('wire_encode_message_sign');
+  late final _wire_encode_message_sign =
+      _wire_encode_message_signPtr.asFunction<
+          void Function(int, ffi.Pointer<wire_uint_8_list>, int,
               ffi.Pointer<wire_uint_8_list>)>();
 
   void wire_encode_transaction(

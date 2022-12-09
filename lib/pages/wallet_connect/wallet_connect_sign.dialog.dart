@@ -1,21 +1,19 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:developer';
 
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:tookey/ffi.dart';
 import 'package:tookey/services/backend_client.dart';
 import 'package:tookey/state.dart';
+import 'package:tookey/tookey_transaction.dart';
 import 'package:tookey/widgets/dialog/dialog_button.dart';
 import 'package:tookey/widgets/dialog/dialog_progress.dart';
 import 'package:tookey/widgets/dialog/dialog_title.dart';
 import 'package:tookey/widgets/toaster.dart';
-import 'package:wallet_connect/utils/hex.dart';
 import 'package:wallet_connect/wallet_connect.dart';
-import 'package:web3dart/web3dart.dart';
 
 class WalletConnectSignDialog extends StatefulWidget {
   const WalletConnectSignDialog({
@@ -61,49 +59,55 @@ class _WalletConnectSignDialogState extends State<WalletConnectSignDialog> {
       isExecuting = true;
     });
 
-    // try {
-    if (widget.tx != null) {
-      log('start parse ${widget.tx}');
-      final tx = await state.parseTransaction(widget.tx!);
-      log('parsedtx: $tx');
-      final hash = await api.toMessageHash(txRequest: tx);
-      final signature =
-          await state.signKey(widget.tx!.data!, hash, widget.metadata);
-      final encodedTx =
-          await api.encodeTransaction(txRequest: tx, signature: signature);
+    try {
+      if (widget.tx != null) {
+        log('start parse ${widget.tx}');
+        final tx = await TookeyTransaction.parseTransaction(widget.tx!);
+        final txJson = jsonEncode(tx);
+        log('parsedtx: $txJson');
+        final hash = await api.transactionToMessageHash(txRequest: txJson);
+        final signature =
+            await state.signKey(widget.tx!.data!, hash, widget.metadata);
+        final encodedTx = await api.encodeTransaction(
+            txRequest: txJson, signature: signature);
 
-      await Toaster.success('Transaction signed');
-      await state.sendSignedTransaction(encodedTx).then((value) {
-        Toaster.success('Transaction successfully sent');
-        signJoinHandle.complete(value);
-        widget.onSign(result: value);
-      }).catchError((error) {
-        Toaster.error('Transaction send fail');
-      });
+        await Toaster.success('Transaction signed');
+        await state.sendSignedTransaction(encodedTx).then((value) {
+          Toaster.success('Transaction successfully sent');
+          signJoinHandle.complete(value);
+          widget.onSign(result: value);
+        }).catchError((error) {
+          Toaster.error('Transaction send fail');
+        });
+      }
+      if (widget.message != null) {
+        // TODO(temadev): implement
+
+        final hash = await api.messageToHash(data: widget.message!.data!);
+        final signature =
+            await state.signKey(widget.message!.data!, hash, widget.metadata);
+        final chainId = await state.chainId();
+        final result = await api.encodeMessageSign(
+            data: widget.message!.data!,
+            chainId: chainId,
+            signature: signature);
+
+        await Toaster.success('Message signed');
+        signJoinHandle.complete(result);
+        widget.onSign(result: result);
+      }
+    } catch (error) {
+      if (kDebugMode) {
+        print(error);
+      }
+      if (error is BackendException) {
+        await Toaster.error(error.message);
+      } else {
+        await Toaster.error('Failed');
+      }
+      signJoinHandle.complete();
+      widget.onSign();
     }
-    if (widget.message != null) {
-      // TODO(temadev): implement
-      // final hash = await api.messageToHash(message: widget.tx!.data!);
-      // final signedTransaction =
-      //     await state.signKey(widget.tx!.data!, hash, widget.metadata);
-      //
-      // await Toaster.success('Transaction signed');
-      // await state
-      //     .sendSignedTransaction(signedTransaction)
-      //     .then((value) => Toaster.success('Transaction successfully sent'))
-      //     .catchError((error) => Toaster.error('Transaction send fail'));
-      // signJoinHandle.complete(signedTransaction);
-      // widget.onSign(result: signedTransaction);
-    }
-    // } catch (error) {
-    //   if (error is BackendException) {
-    //     await Toaster.error(error.message);
-    //   } else {
-    //     await Toaster.error('Failed');
-    //   }
-    //   signJoinHandle.complete();
-    //   widget.onSign();
-    // }
 
     setState(() {
       isExecuting = false;
