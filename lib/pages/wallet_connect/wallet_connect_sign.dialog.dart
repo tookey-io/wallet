@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -132,7 +133,7 @@ class _WalletConnectSignDialogState extends State<WalletConnectSignDialog> {
           padding: const EdgeInsets.only(bottom: 8),
           child: const Text(
             'Sign Message',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
           ),
         ),
         Theme(
@@ -143,13 +144,22 @@ class _WalletConnectSignDialogState extends State<WalletConnectSignDialog> {
               tilePadding: EdgeInsets.zero,
               title: const Text(
                 'Message',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                style: TextStyle(fontSize: 16),
               ),
               children: [
-                Text('To: ${widget.tx?.to}'),
-                Text('Gas limit: ${widget.tx?.gasLimit}'),
-                Text('Gas price: ${widget.tx?.gasPrice}'),
-                Text(widget.data!, style: const TextStyle(fontSize: 16)),
+                Text(
+                  [
+                    'To: ${widget.tx?.to}',
+                    'Gas limit: ${widget.tx?.gasLimit}',
+                    'Gas price: ${widget.tx?.gasPrice}',
+                    widget.data!
+                  ].join('\n'),
+                  textAlign: TextAlign.left,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontFamily: Platform.isIOS ? 'Courier' : 'monospace',
+                  ),
+                ),
               ],
             ),
           ),
@@ -162,8 +172,7 @@ class _WalletConnectSignDialogState extends State<WalletConnectSignDialog> {
                   title: 'SIGN',
                   onPressed: () => _onSign(state),
                   buttonStyle: TextButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    backgroundColor: Theme.of(context).colorScheme.secondary,
+                    foregroundColor: Theme.of(context).colorScheme.secondary,
                   ),
                   expanded: true,
                 ),
@@ -172,8 +181,7 @@ class _WalletConnectSignDialogState extends State<WalletConnectSignDialog> {
                   title: 'REJECT',
                   onPressed: widget.onReject,
                   buttonStyle: TextButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    backgroundColor: Theme.of(context).colorScheme.secondary,
+                    foregroundColor: Theme.of(context).colorScheme.error,
                   ),
                   expanded: true,
                 ),

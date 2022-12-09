@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'dart:developer';
+import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:tookey/services/http_client/http_client.dart';
+import 'package:tookey/widgets/toaster.dart';
 
 part 'backend_client.g.dart';
 
@@ -63,13 +65,18 @@ class BackendClient {
 
     client = HttpClient(
       client: dio,
-      exceptionMapper: <T>(Response<T> response, exception) {
-        final data = response.data;
+      exceptionMapper: <T>(Response<T>? response, exception) {
+        final data = response?.data;
+
         if (data != null && data is Map<String, dynamic>) {
           return BackendException(
             message: data['message'] as String,
             exception: exception,
           );
+        }
+        if (exception.error is SocketException) {
+          final error = exception.error as SocketException;
+          Toaster.error(error.message, time: 2);
         }
         return null;
       },

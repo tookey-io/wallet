@@ -149,7 +149,7 @@ class _WalletConnectPageState extends State<WalletConnectPage> {
           title: _wcClient!.remotePeerMeta!.name,
           icon: _wcClient!.remotePeerMeta!.icons.first,
           tx: tx,
-          data: tx.data!,
+          data: tx.data,
           metadata: _wcSessionStore?.remotePeerMeta.toJson(),
           onSign: ({result}) {
             if (result != null) {
@@ -157,6 +157,12 @@ class _WalletConnectPageState extends State<WalletConnectPage> {
               logEvent(
                 '[$id] Transaction approved',
                 type: EventLogType.success,
+              );
+            } else {
+              _wcClient?.rejectRequest(id: id);
+              logEvent(
+                '[$id] Transaction failed',
+                type: EventLogType.danger,
               );
             }
 
@@ -345,7 +351,7 @@ class _WalletConnectPageState extends State<WalletConnectPage> {
       ),
       floatingActionButton: FloatingActionButton(
         heroTag: 'wc-disconnect',
-        backgroundColor: Colors.redAccent,
+        backgroundColor: Colors.grey,
         onPressed: _disconnect,
         child: const Icon(Icons.exit_to_app_outlined),
       ),

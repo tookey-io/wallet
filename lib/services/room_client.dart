@@ -16,8 +16,8 @@ class RoomClient {
     _baseUri = path.join(relayUrl, 'rooms', _room);
     client = HttpClient(
       client: Dio(BaseOptions(baseUrl: _baseUri)),
-      exceptionMapper: <T>(Response<T> response, exception) {
-        final data = response.data;
+      exceptionMapper: <T>(Response<T>? response, exception) {
+        final data = response?.data;
         if (data != null && data is Map<String, dynamic>) {
           return BackendException(
             message: data['message'] as String,

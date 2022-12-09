@@ -151,7 +151,7 @@ class _MyAppState extends State<MyApp> {
       900: Color(blackPrimaryValue),
     });
 
-    var tookeyTheme = FlexThemeData.dark(
+    final tookeyTheme = FlexThemeData.dark(
       scheme: FlexScheme.custom,
       appBarStyle: FlexAppBarStyle.surface,
       darkIsTrueBlack: true,

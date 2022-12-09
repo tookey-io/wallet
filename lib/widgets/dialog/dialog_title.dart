@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 
 class DialogTitle extends StatelessWidget {
   const DialogTitle({
@@ -19,7 +20,11 @@ class DialogTitle extends StatelessWidget {
             height: 100,
             width: 100,
             padding: const EdgeInsets.only(bottom: 8),
-            child: Image.network(icon!),
+            child: Image.network(
+              icon!,
+              errorBuilder: (context, error, stackTrace) =>
+                  SvgPicture.network(icon!),
+            ),
           ),
         Text(
           title,

@@ -14,7 +14,7 @@ class KeyCard extends StatelessWidget {
           ListTile(
             title: Text(keyRecord.name),
             // subtitle: const Text('Name'),
-            leading: const Icon(Icons.title, color: Colors.blue),
+            leading: const Icon(Icons.title, color: Colors.white70),
           ),
           if (keyRecord.description != '')
             ListTile(
@@ -23,7 +23,7 @@ class KeyCard extends StatelessWidget {
                 style: const TextStyle(fontSize: 12),
               ),
               // subtitle: const Text('Description'),
-              leading: const Icon(Icons.info, color: Colors.blue),
+              leading: const Icon(Icons.info, color: Colors.white70),
             ),
           ListTile(
             title: Text(
@@ -31,7 +31,7 @@ class KeyCard extends StatelessWidget {
               style: const TextStyle(fontSize: 12),
             ),
             // subtitle: const Text('Public key'),
-            leading: const Icon(Icons.key, color: Colors.blue),
+            leading: const Icon(Icons.key, color: Colors.white70),
           ),
         ],
       ),
