@@ -31,34 +31,34 @@ fn wire_connect_logger_impl(port_: MessagePort) {
         move || move |task_callback| connect_logger(task_callback.stream_sink()),
     )
 }
-fn wire_to_public_key_impl(
+fn wire_private_key_to_public_key_impl(
     port_: MessagePort,
-    key: impl Wire2Api<String> + UnwindSafe,
-    _compressed: impl Wire2Api<bool> + UnwindSafe,
+    private_key: impl Wire2Api<String> + UnwindSafe,
+    compressed: impl Wire2Api<bool> + UnwindSafe,
 ) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {
-            debug_name: "to_public_key",
+            debug_name: "private_key_to_public_key",
             port: Some(port_),
             mode: FfiCallMode::Normal,
         },
         move || {
-            let api_key = key.wire2api();
-            let api__compressed = _compressed.wire2api();
-            move |task_callback| to_public_key(api_key, api__compressed)
+            let api_private_key = private_key.wire2api();
+            let api_compressed = compressed.wire2api();
+            move |task_callback| private_key_to_public_key(api_private_key, api_compressed)
         },
     )
 }
-fn wire_to_ethereum_address_impl(port_: MessagePort, key: impl Wire2Api<String> + UnwindSafe) {
+fn wire_private_key_to_ethereum_address_impl(port_: MessagePort, private_key: impl Wire2Api<String> + UnwindSafe) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {
-            debug_name: "to_ethereum_address",
+            debug_name: "private_key_to_ethereum_address",
             port: Some(port_),
             mode: FfiCallMode::Normal,
         },
         move || {
-            let api_key = key.wire2api();
-            move |task_callback| to_ethereum_address(api_key)
+            let api_private_key = private_key.wire2api();
+            move |task_callback| private_key_to_ethereum_address(api_private_key)
         },
     )
 }
@@ -88,30 +88,30 @@ fn wire_message_to_hash_impl(port_: MessagePort, data: impl Wire2Api<String> + U
         },
     )
 }
-fn wire_encode_message_sign_impl(
+fn wire_encode_message_signature_impl(
     port_: MessagePort,
-    data: impl Wire2Api<String> + UnwindSafe,
+    message_hash: impl Wire2Api<String> + UnwindSafe,
     chain_id: impl Wire2Api<u32> + UnwindSafe,
-    signature: impl Wire2Api<String> + UnwindSafe,
+    signature_recid: impl Wire2Api<String> + UnwindSafe,
 ) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {
-            debug_name: "encode_message_sign",
+            debug_name: "encode_message_signature",
             port: Some(port_),
             mode: FfiCallMode::Normal,
         },
         move || {
-            let api_data = data.wire2api();
+            let api_message_hash = message_hash.wire2api();
             let api_chain_id = chain_id.wire2api();
-            let api_signature = signature.wire2api();
-            move |task_callback| encode_message_sign(api_data, api_chain_id, api_signature)
+            let api_signature_recid = signature_recid.wire2api();
+            move |task_callback| encode_message_signature(api_message_hash, api_chain_id, api_signature_recid)
         },
     )
 }
 fn wire_encode_transaction_impl(
     port_: MessagePort,
     tx_request: impl Wire2Api<String> + UnwindSafe,
-    signature: impl Wire2Api<String> + UnwindSafe,
+    signature_recid: impl Wire2Api<String> + UnwindSafe,
 ) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {
@@ -121,8 +121,8 @@ fn wire_encode_transaction_impl(
         },
         move || {
             let api_tx_request = tx_request.wire2api();
-            let api_signature = signature.wire2api();
-            move |task_callback| encode_transaction(api_tx_request, api_signature)
+            let api_signature_recid = signature_recid.wire2api();
+            move |task_callback| encode_transaction(api_tx_request, api_signature_recid)
         },
     )
 }

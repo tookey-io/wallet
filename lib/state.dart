@@ -92,7 +92,7 @@ class AppState extends ChangeNotifier {
   Future<String?> getShareableAddress() async {
     final shareableKey = await readShareableKey();
     return shareableKey != null
-        ? await api.toEthereumAddress(key: shareableKey)
+        ? await api.privateKeyToEthereumAddress(privateKey: shareableKey)
         : null;
   }
 
@@ -167,7 +167,8 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> importKey(String importedKey) async {
-    final publicKey = await api.toPublicKey(key: importedKey, compressed: true);
+    final publicKey = await api.privateKeyToPublicKey(
+        privateKey: importedKey, compressed: true);
 
     // TODO(temadev): backend, save to participants, approve
     await addKey(publicKey, importedKey);
@@ -195,8 +196,8 @@ class AppState extends ChangeNotifier {
     final results = await Future.wait(
         [api.keygen(params: paramsFor(2)), api.keygen(params: paramsFor(3))]);
 
-    final publicKey =
-        await api.toPublicKey(key: results[0].key!, compressed: true);
+    final publicKey = await api.privateKeyToPublicKey(
+        privateKey: results[0].key!, compressed: true);
 
     log('Key is $publicKey');
 

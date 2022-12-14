@@ -66,11 +66,14 @@ class _WalletConnectSignDialogState extends State<WalletConnectSignDialog> {
         final tx = await TookeyTransaction.parseTransaction(widget.tx!);
         final txJson = jsonEncode(tx);
         log('parsedtx: $txJson');
-        final hash = await api.transactionToMessageHash(txRequest: txJson);
-        final signature =
-            await state.signKey(widget.tx!.data!, hash, widget.metadata);
+        final messageHash =
+            await api.transactionToMessageHash(txRequest: txJson);
+        final signatureRecid =
+            await state.signKey(widget.tx!.data!, messageHash, widget.metadata);
         final encodedTx = await api.encodeTransaction(
-            txRequest: txJson, signature: signature);
+          txRequest: txJson,
+          signatureRecid: signatureRecid,
+        );
 
         await Toaster.success('Transaction signed');
         await state.sendSignedTransaction(encodedTx).then((value) {
@@ -82,16 +85,19 @@ class _WalletConnectSignDialogState extends State<WalletConnectSignDialog> {
         });
       }
       if (widget.message != null) {
-        // TODO(temadev): implement
-
-        final hash = await api.messageToHash(data: widget.message!.data!);
-        final signature =
-            await state.signKey(widget.message!.data!, hash, widget.metadata);
+        final messageHash =
+            await api.messageToHash(data: widget.message!.data!);
+        final signatureRecid = await state.signKey(
+          widget.message!.data!,
+          messageHash,
+          widget.metadata,
+        );
         final chainId = await state.chainId();
-        final result = await api.encodeMessageSign(
-            data: widget.message!.data!,
-            chainId: chainId,
-            signature: signature);
+        final result = await api.encodeMessageSignature(
+          messageHash: messageHash,
+          chainId: chainId,
+          signatureRecid: signatureRecid,
+        );
 
         await Toaster.success('Message signed');
         signJoinHandle.complete(result);

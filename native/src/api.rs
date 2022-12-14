@@ -1,11 +1,6 @@
-use anyhow::Context;
 use flutter_rust_bridge::{frb, StreamSink};
-use hex::ToHex;
-use std::ops::Deref;
 use std::sync::{Mutex, RwLock};
 use tokio::runtime::Runtime;
-use tookey_libtss::curv::elliptic::curves::Secp256k1;
-use tookey_libtss::ecdsa::state_machine::keygen::LocalKey;
 pub use tookey_libtss::keygen::{KeygenParams, KeygenResult};
 pub use tookey_libtss::sign::{SignParams, SignResult};
 
@@ -45,31 +40,32 @@ pub fn connect_logger(stream: StreamSink<String>) -> anyhow::Result<()> {
     Ok(())
 }
 
-pub fn to_public_key(key: String, _compressed: bool) -> anyhow::Result<String> {
-    let local_share: LocalKey<Secp256k1> = serde_json::from_str(key.as_str()).context("key deserialization")?;
-    let pk = local_share.public_key();
-
-    Ok(pk.to_bytes(true).deref().encode_hex())
+pub fn private_key_to_public_key(private_key: String, compressed: bool) -> anyhow::Result<String> {
+    tookey_libtss_ethereum::ethers::private_key_to_public_key(private_key, Some(compressed))
 }
 
-pub fn to_ethereum_address(key: String) -> anyhow::Result<String> {
-    crate::ethers::to_ethereum_address(key)
+pub fn private_key_to_ethereum_address(private_key: String) -> anyhow::Result<String> {
+    tookey_libtss_ethereum::ethers::private_key_to_ethereum_address(private_key)
 }
 
 pub fn transaction_to_message_hash(tx_request: String) -> anyhow::Result<String> {
-    crate::ethers::transaction_to_message_hash(tx_request)
+    tookey_libtss_ethereum::ethers::transaction_to_message_hash(tx_request)
 }
 
 pub fn message_to_hash(data: String) -> anyhow::Result<String> {
-    crate::ethers::message_to_hash(data)
+    tookey_libtss_ethereum::ethers::message_to_hash(data)
 }
 
-pub fn encode_message_sign(data: String, chain_id: u32, signature: String) -> anyhow::Result<String> {
-    crate::ethers::encode_message_sign(data, chain_id, signature)
+pub fn encode_message_signature(
+    message_hash: String,
+    chain_id: u32,
+    signature_recid: String,
+) -> anyhow::Result<String> {
+    tookey_libtss_ethereum::ethers::encode_message_signature(message_hash, chain_id, signature_recid)
 }
 
-pub fn encode_transaction(tx_request: String, signature: String) -> anyhow::Result<Vec<u8>> {
-    crate::ethers::encode_transaction(tx_request, signature)
+pub fn encode_transaction(tx_request: String, signature_recid: String) -> anyhow::Result<Vec<u8>> {
+    tookey_libtss_ethereum::ethers::encode_transaction(tx_request, signature_recid)
 }
 
 #[frb(mirror(KeygenParams))]
