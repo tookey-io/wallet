@@ -1,22 +1,20 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:tookey/ffi.dart';
 import 'package:tookey/services/backend_client.dart';
 import 'package:tookey/state.dart';
+import 'package:tookey/tookey_transaction.dart';
 import 'package:tookey/widgets/dialog/dialog_button.dart';
 import 'package:tookey/widgets/dialog/dialog_progress.dart';
 import 'package:tookey/widgets/dialog/dialog_title.dart';
 import 'package:tookey/widgets/toaster.dart';
-import 'package:wallet_connect/utils/hex.dart';
 import 'package:wallet_connect/wallet_connect.dart';
-import 'package:web3dart/web3dart.dart';
 
 class WalletConnectSignDialog extends StatefulWidget {
   const WalletConnectSignDialog({
@@ -65,13 +63,17 @@ class _WalletConnectSignDialogState extends State<WalletConnectSignDialog> {
     try {
       if (widget.tx != null) {
         log('start parse ${widget.tx}');
-        final tx = await state.parseTransaction(widget.tx!);
-        log('parsedtx: $tx');
-        final hash = await api.toMessageHash(txRequest: tx);
-        final signature =
-            await state.signKey(widget.tx!.data!, hash, widget.metadata);
-        final encodedTx =
-            await api.encodeTransaction(txRequest: tx, signature: signature);
+        final tx = await TookeyTransaction.parseTransaction(widget.tx!);
+        final txJson = jsonEncode(tx);
+        log('parsedtx: $txJson');
+        final messageHash =
+            await api.transactionToMessageHash(txRequest: txJson);
+        final signatureRecid =
+            await state.signKey(widget.tx!.data!, messageHash, widget.metadata);
+        final encodedTx = await api.encodeTransaction(
+          txRequest: txJson,
+          signatureRecid: signatureRecid,
+        );
 
         await Toaster.success('Transaction signed');
         await state.sendSignedTransaction(encodedTx).then((value) {
@@ -83,20 +85,28 @@ class _WalletConnectSignDialogState extends State<WalletConnectSignDialog> {
         });
       }
       if (widget.message != null) {
-        // TODO(temadev): implement
-        // final hash = await api.messageToHash(message: widget.tx!.data!);
-        // final signedTransaction =
-        //     await state.signKey(widget.tx!.data!, hash, widget.metadata);
-        //
-        // await Toaster.success('Transaction signed');
-        // await state
-        //     .sendSignedTransaction(signedTransaction)
-        //     .then((value) => Toaster.success('Transaction successfully sent'))
-        //     .catchError((error) => Toaster.error('Transaction send fail'));
-        // signJoinHandle.complete(signedTransaction);
-        // widget.onSign(result: signedTransaction);
+        final messageHash =
+            await api.messageToHash(data: widget.message!.data!);
+        final signatureRecid = await state.signKey(
+          widget.message!.data!,
+          messageHash,
+          widget.metadata,
+        );
+        final chainId = await state.chainId();
+        final result = await api.encodeMessageSignature(
+          messageHash: messageHash,
+          chainId: chainId,
+          signatureRecid: signatureRecid,
+        );
+
+        await Toaster.success('Message signed');
+        signJoinHandle.complete(result);
+        widget.onSign(result: result);
       }
     } catch (error) {
+      if (kDebugMode) {
+        print(error);
+      }
       if (error is BackendException) {
         await Toaster.error(error.message);
       } else {

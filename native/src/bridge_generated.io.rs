@@ -7,36 +7,42 @@ pub extern "C" fn wire_connect_logger(port_: i64) {
 }
 
 #[no_mangle]
-pub extern "C" fn wire_to_public_key(port_: i64, key: *mut wire_uint_8_list, _compressed: bool) {
-    wire_to_public_key_impl(port_, key, _compressed)
+pub extern "C" fn wire_private_key_to_public_key(port_: i64, private_key: *mut wire_uint_8_list, compressed: bool) {
+    wire_private_key_to_public_key_impl(port_, private_key, compressed)
 }
 
 #[no_mangle]
-pub extern "C" fn wire_to_ethereum_address(port_: i64, key: *mut wire_uint_8_list) {
-    wire_to_ethereum_address_impl(port_, key)
+pub extern "C" fn wire_private_key_to_ethereum_address(port_: i64, private_key: *mut wire_uint_8_list) {
+    wire_private_key_to_ethereum_address_impl(port_, private_key)
 }
 
 #[no_mangle]
-pub extern "C" fn wire_to_message_hash(port_: i64, tx_request: *mut wire_uint_8_list) {
-    wire_to_message_hash_impl(port_, tx_request)
+pub extern "C" fn wire_transaction_to_message_hash(port_: i64, tx_request: *mut wire_uint_8_list) {
+    wire_transaction_to_message_hash_impl(port_, tx_request)
 }
 
 #[no_mangle]
-pub extern "C" fn wire_convert_to_ethers_signature(
+pub extern "C" fn wire_message_to_hash(port_: i64, data: *mut wire_uint_8_list) {
+    wire_message_to_hash_impl(port_, data)
+}
+
+#[no_mangle]
+pub extern "C" fn wire_encode_message_signature(
     port_: i64,
-    tx_request: *mut wire_uint_8_list,
-    signature: *mut wire_uint_8_list,
+    message_hash: *mut wire_uint_8_list,
+    chain_id: u32,
+    signature_recid: *mut wire_uint_8_list,
 ) {
-    wire_convert_to_ethers_signature_impl(port_, tx_request, signature)
+    wire_encode_message_signature_impl(port_, message_hash, chain_id, signature_recid)
 }
 
 #[no_mangle]
 pub extern "C" fn wire_encode_transaction(
     port_: i64,
     tx_request: *mut wire_uint_8_list,
-    signature: *mut wire_uint_8_list,
+    signature_recid: *mut wire_uint_8_list,
 ) {
-    wire_encode_transaction_impl(port_, tx_request, signature)
+    wire_encode_transaction_impl(port_, tx_request, signature_recid)
 }
 
 #[no_mangle]
