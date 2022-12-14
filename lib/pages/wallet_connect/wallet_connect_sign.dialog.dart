@@ -1,7 +1,10 @@
 import 'dart:async';
+import 'dart:developer';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:tookey/ffi.dart';
@@ -11,7 +14,9 @@ import 'package:tookey/widgets/dialog/dialog_button.dart';
 import 'package:tookey/widgets/dialog/dialog_progress.dart';
 import 'package:tookey/widgets/dialog/dialog_title.dart';
 import 'package:tookey/widgets/toaster.dart';
+import 'package:wallet_connect/utils/hex.dart';
 import 'package:wallet_connect/wallet_connect.dart';
+import 'package:web3dart/web3dart.dart';
 
 class WalletConnectSignDialog extends StatefulWidget {
   const WalletConnectSignDialog({
@@ -59,32 +64,37 @@ class _WalletConnectSignDialogState extends State<WalletConnectSignDialog> {
 
     try {
       if (widget.tx != null) {
-        // TODO(temadev): implement
-        final hash = await api.messageToHash(message: widget.tx!.data!);
-        final signedTransaction =
+        log('start parse ${widget.tx}');
+        final tx = await state.parseTransaction(widget.tx!);
+        log('parsedtx: $tx');
+        final hash = await api.toMessageHash(txRequest: tx);
+        final signature =
             await state.signKey(widget.tx!.data!, hash, widget.metadata);
+        final encodedTx =
+            await api.encodeTransaction(txRequest: tx, signature: signature);
 
         await Toaster.success('Transaction signed');
-        await state
-            .sendSignedTransaction(signedTransaction)
-            .then((value) => Toaster.success('Transaction successfully sent'))
-            .catchError((error) => Toaster.error('Transaction send fail'));
-        signJoinHandle.complete(signedTransaction);
-        widget.onSign(result: signedTransaction);
+        await state.sendSignedTransaction(encodedTx).then((value) {
+          Toaster.success('Transaction successfully sent');
+          signJoinHandle.complete(value);
+          widget.onSign(result: value);
+        }).catchError((error) {
+          Toaster.error('Transaction send fail');
+        });
       }
       if (widget.message != null) {
         // TODO(temadev): implement
-        final hash = await api.messageToHash(message: widget.tx!.data!);
-        final signedTransaction =
-            await state.signKey(widget.tx!.data!, hash, widget.metadata);
-
-        await Toaster.success('Transaction signed');
-        await state
-            .sendSignedTransaction(signedTransaction)
-            .then((value) => Toaster.success('Transaction successfully sent'))
-            .catchError((error) => Toaster.error('Transaction send fail'));
-        signJoinHandle.complete(signedTransaction);
-        widget.onSign(result: signedTransaction);
+        // final hash = await api.messageToHash(message: widget.tx!.data!);
+        // final signedTransaction =
+        //     await state.signKey(widget.tx!.data!, hash, widget.metadata);
+        //
+        // await Toaster.success('Transaction signed');
+        // await state
+        //     .sendSignedTransaction(signedTransaction)
+        //     .then((value) => Toaster.success('Transaction successfully sent'))
+        //     .catchError((error) => Toaster.error('Transaction send fail'));
+        // signJoinHandle.complete(signedTransaction);
+        // widget.onSign(result: signedTransaction);
       }
     } catch (error) {
       if (error is BackendException) {
@@ -119,7 +129,7 @@ class _WalletConnectSignDialogState extends State<WalletConnectSignDialog> {
           padding: const EdgeInsets.only(bottom: 8),
           child: const Text(
             'Sign Message',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
           ),
         ),
         Theme(
@@ -130,10 +140,22 @@ class _WalletConnectSignDialogState extends State<WalletConnectSignDialog> {
               tilePadding: EdgeInsets.zero,
               title: const Text(
                 'Message',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                style: TextStyle(fontSize: 16),
               ),
               children: [
-                Text(widget.data!, style: const TextStyle(fontSize: 16)),
+                Text(
+                  [
+                    'To: ${widget.tx?.to}',
+                    'Gas limit: ${widget.tx?.gasLimit}',
+                    'Gas price: ${widget.tx?.gasPrice}',
+                    widget.data!
+                  ].join('\n'),
+                  textAlign: TextAlign.left,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontFamily: Platform.isIOS ? 'Courier' : 'monospace',
+                  ),
+                ),
               ],
             ),
           ),
@@ -146,8 +168,7 @@ class _WalletConnectSignDialogState extends State<WalletConnectSignDialog> {
                   title: 'SIGN',
                   onPressed: () => _onSign(state),
                   buttonStyle: TextButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    backgroundColor: Theme.of(context).colorScheme.secondary,
+                    foregroundColor: Theme.of(context).colorScheme.secondary,
                   ),
                   expanded: true,
                 ),
@@ -156,8 +177,7 @@ class _WalletConnectSignDialogState extends State<WalletConnectSignDialog> {
                   title: 'REJECT',
                   onPressed: widget.onReject,
                   buttonStyle: TextButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    backgroundColor: Theme.of(context).colorScheme.secondary,
+                    foregroundColor: Theme.of(context).colorScheme.error,
                   ),
                   expanded: true,
                 ),

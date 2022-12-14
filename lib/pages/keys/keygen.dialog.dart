@@ -78,7 +78,7 @@ class _KeygenDialogState extends State<KeygenDialog> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 15),
+                  const SizedBox(height: 25),
                   Text(
                     adminKey.publicKey,
                     style: const TextStyle(fontSize: 14),
@@ -120,7 +120,7 @@ class _KeygenDialogState extends State<KeygenDialog> {
           const SizedBox(height: 20),
           Row(
             children: const [
-              Icon(Icons.close, color: Colors.redAccent),
+              Icon(Icons.close, color: Colors.red),
               SizedBox(width: 8),
               Text(
                 'Keygeneration failed',
@@ -131,7 +131,7 @@ class _KeygenDialogState extends State<KeygenDialog> {
               ),
             ],
           ),
-          const SizedBox(height: 15),
+          const SizedBox(height: 25),
           Text(text, style: const TextStyle(fontSize: 14)),
           const SizedBox(height: 25),
           DialogButton(
@@ -140,10 +140,7 @@ class _KeygenDialogState extends State<KeygenDialog> {
               Navigator.pop(context);
               Navigator.pop(ctx);
             },
-            buttonStyle: TextButton.styleFrom(
-              foregroundColor: Colors.white,
-              backgroundColor: Colors.redAccent,
-            ),
+            buttonStyle: TextButton.styleFrom(foregroundColor: Colors.red),
           ),
         ],
       ),

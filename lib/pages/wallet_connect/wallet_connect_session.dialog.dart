@@ -41,8 +41,7 @@ class WalletConnectSessionDialog extends StatelessWidget {
                   title: 'APPROVE',
                   onPressed: () => onApprove(state),
                   buttonStyle: TextButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    backgroundColor: Theme.of(context).colorScheme.secondary,
+                    foregroundColor: Theme.of(context).colorScheme.secondary,
                   ),
                   expanded: true,
                 ),
@@ -51,8 +50,7 @@ class WalletConnectSessionDialog extends StatelessWidget {
                   title: 'REJECT',
                   onPressed: onReject,
                   buttonStyle: TextButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    backgroundColor: Theme.of(context).colorScheme.secondary,
+                    foregroundColor: Theme.of(context).colorScheme.error,
                   ),
                   expanded: true,
                 ),

@@ -1,20 +1,28 @@
 import 'dart:collection';
+import 'dart:convert';
 import 'dart:core';
 import 'dart:developer';
+import 'dart:ffi';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_rust_bridge/flutter_rust_bridge.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:http/http.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:tookey/ffi.dart';
 import 'package:tookey/services/backend_client.dart';
-import 'package:tookey/services/keygen.dart';
-import 'package:tookey/services/signer.dart';
+import 'package:tookey/tookey_transaction.dart';
+import 'package:wallet_connect/models/ethereum/wc_ethereum_transaction.dart';
+import 'package:web3dart/crypto.dart';
+import 'package:web3dart/web3dart.dart';
 
 String _keysList() => 'storage:KEYS';
+
 String _key(String id) => 'storage:KEY:$id';
+
 String _refreshTokenStorage() => 'storage:TOKEN:REFRESH';
 
 class AppState extends ChangeNotifier {
@@ -35,10 +43,11 @@ class AppState extends ChangeNotifier {
       baseUrl: backendApiUrl,
       refreshToken: _refreshToken,
     );
-    await fetchKeys();
+    // await fetchKeys();
   }
 
   AuthToken? get refreshToken => _refreshToken;
+
   set refreshToken(AuthToken? value) {
     if (_refreshToken != value) {
       _refreshToken = value;
@@ -56,6 +65,7 @@ class AppState extends ChangeNotifier {
   }
 
   String? get shareableKey => _shareableKey;
+
   set shareableKey(String? value) {
     if (_shareableKey != value) {
       _shareableKey = value;
@@ -64,6 +74,7 @@ class AppState extends ChangeNotifier {
   }
 
   String? get ownerKey => _ownerKey;
+
   set ownerKey(String? value) {
     if (_ownerKey != value) {
       _ownerKey = value;
@@ -155,11 +166,9 @@ class AppState extends ChangeNotifier {
     await Share.shareXFiles([XFile(filePath)], subject: 'Backup Key');
   }
 
-  Future<void> sendSignedTransaction(String signedTransaction) async {
-    // final httpClient = Client();
-    // final ethClient = Web3Client(nodeUrl, httpClient);
-    // final data = Uint8List.fromList(signedTransaction.codeUnits);
-    // await ethClient.sendRawTransaction(data);
+  Future<String> sendSignedTransaction(Uint8List signedTransaction) async {
+    final ethClient = Web3Client(dotenv.env['NODE_URL']!, Client());
+    return ethClient.sendRawTransaction(signedTransaction);
   }
 
   Future<void> importKey(String importedKey) async {
@@ -177,20 +186,27 @@ class AppState extends ChangeNotifier {
 
     final roomId = keyRecord!.roomId;
 
-    final shareableKeygen = await Keygen.create(2, relayUrl, roomId);
-    final adminKeygen = await Keygen.create(3, relayUrl, roomId);
+    KeygenParams paramsFor(int index) {
+      return KeygenParams(
+        roomId: roomId,
+        participantIndex: index,
+        participantsCount: 3,
+        participantsThreshold: 1,
+        relayAddress: relayUrl,
+        timeoutSeconds: 60,
+      );
+    }
 
-    final results = await Future.wait([
-      shareableKeygen.keygen(),
-      adminKeygen.keygen(),
-    ]);
+    final results = await Future.wait(
+        [api.keygen(params: paramsFor(2)), api.keygen(params: paramsFor(3))]);
 
-    final publicKey = await api.toPublicKey(key: results[0], compressed: true);
+    final publicKey =
+        await api.toPublicKey(key: results[0].key!, compressed: true);
 
     log('Key is $publicKey');
 
-    final shareableKey = Keystore(publicKey, results[0]);
-    final adminKey = Keystore(publicKey, results[1]);
+    final shareableKey = Keystore(publicKey, results[0].key!);
+    final adminKey = Keystore(publicKey, results[1].key!);
 
     await addKey(shareableKey.publicKey, shareableKey.shareableKey);
 
@@ -202,6 +218,8 @@ class AppState extends ChangeNotifier {
     String hash,
     Map<String, dynamic>? metadata,
   ) async {
+    log('Waiting for approve in telegram');
+
     final signRecord = await backend?.signKey(
       shareableKey!,
       message,
@@ -209,20 +227,23 @@ class AppState extends ChangeNotifier {
       metadata: metadata,
     );
 
+    log('Approved');
+
     final localShare = await readShareableKey();
 
     final roomId = signRecord!.roomId;
 
-    final signer = await Signer.create(relayUrl, localShare!, roomId);
-    final signature = await signer.sign(hash);
-
-    final ethSignature = await api.toEthereumSignature(
-      message: message,
-      signature: signature,
-      chain: 97,
+    final params = SignParams(
+      roomId: roomId,
+      key: localShare!,
+      data: hash,
+      participantsIndexes: Uint16List.fromList([1, 2]),
+      relayAddress: relayUrl,
+      timeoutSeconds: 60,
     );
-
-    return ethSignature;
+    final result = await api.sign(params: params);
+    if (result.result == null) throw Exception(result.error);
+    return result.result!;
   }
 
   Future<void> fetchKeys() async {
@@ -234,7 +255,7 @@ class AppState extends ChangeNotifier {
             .where((key) => key.publicKey != '')
             .map((element) => MapEntry(element.publicKey, element)),
       );
-    notifyListeners();
+    // notifyListeners();
   }
 
   Future<void> signin(String apiKey) async {
@@ -247,6 +268,49 @@ class AppState extends ChangeNotifier {
     log('signout');
     refreshToken = null;
     notifyListeners();
+  }
+
+  Future<String> parseTransaction(WCEthereumTransaction tx) async {
+    log("Node is ${dotenv.env['NODE_URL']!}");
+    final ethClient = Web3Client(dotenv.env['NODE_URL']!, Client());
+    log('Chain is ${await ethClient.getNetworkId()}');
+    log('Balace is ${await ethClient.getBalance(EthereumAddress.fromHex(tx.from))}');
+    final gas = await ethClient.estimateGas(
+      sender: EthereumAddress.fromHex(tx.from),
+      to: EthereumAddress.fromHex(
+        tx.to ?? '0x0000000000000000000000000000000000000000',
+      ),
+      value: EtherAmount.fromUnitAndValue(EtherUnit.wei, tx.value),
+      data: tx.data != null ? hexToBytes(tx.data!) : null,
+    );
+    log('Gas is $gas');
+    final txGasPrice = tx.gasPrice ??
+        bytesToHex(intToBytes((await ethClient.getGasPrice()).getInWei));
+    log('GasPrice is $txGasPrice');
+    final nonce =
+        await ethClient.getTransactionCount(EthereumAddress.fromHex(tx.from));
+    log('Nonce is $nonce');
+    final gasPrice = await ethClient.getGasPrice();
+    log('Gas price is $gasPrice');
+
+    final json = tx.toJson();
+
+    log('json encoded ${jsonEncode(json)}');
+
+    final ourTransaction = TookeyTransaction.fromJson(json)
+      // ..chainId = 11155111
+      ..chainId = 97
+      ..nonce = bytesToHex(intToBytes(BigInt.from(nonce)), include0x: true)
+      ..gas = bytesToHex(intToBytes(gas), include0x: true)
+      ..gasPrice = txGasPrice
+      ..maxFeePerGas =
+          bytesToHex(intToBytes(gasPrice.getInWei), include0x: true)
+      ..maxPriorityFeePerGas = bytesToHex(
+        intToBytes(gasPrice.getInWei + BigInt.from(1000000000)),
+        include0x: true,
+      );
+
+    return jsonEncode(ourTransaction);
   }
 }
 

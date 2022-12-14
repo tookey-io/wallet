@@ -21,6 +21,7 @@ dependencies:
     flutter_dotenv: ^5.0.2
     flutter_rust_bridge: ^1.34.2
     flutter_secure_storage: ^6.0.0
+    flex_color_scheme: ^6.1.1
     fluttertoast: ^8.1.1
     freezed: ^2.1.0+1
     freezed_annotation: ^2.1.0
@@ -38,9 +39,10 @@ dependencies:
     very_good_analysis: ^3.1.0
     wallet_connect: ^1.0.2
     web3dart: ^2.5.0
+    flutter_svg: ^1.1.6
 
 dev_dependencies:
-    ffigen: ^6.0.1
+    ffigen: ^7.2.2
     flutter_lints: ^2.0.0
     flutter_test:
         sdk: flutter
@@ -50,3 +52,9 @@ flutter:
     uses-material-design: true
     assets:
         - .env
+
+    fonts:
+        - family: Kodachi
+          fonts:
+            - asset: assets/fonts/Kodachi.ttf
+            
