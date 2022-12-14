@@ -38,7 +38,7 @@ class BackendClient {
           final options = e.requestOptions;
 
           if (e.response?.statusCode == 401) {
-            if (options.headers['apiKey'] != null) return handler.next(e);
+            if (options.headers['X-SIGNIN-KEY'] != null) return handler.next(e);
             await refreshAccessToken();
 
             options.headers['Authorization'] = 'Bearer ${_accessToken!.token}';
@@ -122,7 +122,7 @@ class BackendClient {
       options: Options(
         headers: {
           'accept': 'application/json',
-          'apiKey': apiKey,
+          'X-SIGNIN-KEY': apiKey,
         },
       ),
     );
