@@ -162,10 +162,8 @@ class BackendClient {
       data: {
         'participantsThreshold': 2,
         'participantsCount': 3,
-        'timeoutSeconds': 60,
-        'name': name ?? '',
-        'description': description ?? '',
-        'tags': ['shareable']
+        'participantIndex': 1,
+        'timeoutSeconds': 60
       },
       options: Options(
         headers: {
