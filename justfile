@@ -15,4 +15,11 @@ clean:
     flutter clean
     cd native && cargo clean
 
+
+upload-ios:
+    xcrun altool --upload-app -f build/ios/ipa/tookey.ipa \
+        --type ios \
+        --apiKey HT35DVYRL5 \
+        --apiIssuer 3d5f49d6-0615-49b2-81e5-7299e022ea1d
+
 # vim:expandtab:sw=4:ts=4

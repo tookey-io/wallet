@@ -27,7 +27,7 @@ class _KeysPageState extends State<KeysPage> {
               TextButton(
                 style: style,
                 onPressed: () => state.signout(),
-                child: const Icon(Icons.logout),
+                child: const Icon(Icons.logout, color: Colors.white,),
               ),
               const KeysPopup(),
             ],
