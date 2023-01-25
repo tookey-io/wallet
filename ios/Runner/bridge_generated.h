@@ -65,8 +65,6 @@ void wire_encode_transaction(int64_t port_,
 
 void wire_keygen(int64_t port_, struct wire_KeygenParams *params);
 
-void wire_keygen(int64_t port_, struct wire_KeygenParams *params);
-
 void wire_sign(int64_t port_, struct wire_SignParams *params);
 
 struct wire_KeygenParams *new_box_autoadd_keygen_params_0(void);
