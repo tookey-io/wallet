@@ -17,14 +17,15 @@ import 'package:uni_links/uni_links.dart';
 bool _initialUriIsHandled = false;
 
 Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
   await dotenv.load();
   final lib = loadLibrary('native');
   api = NativeImpl(lib);
   api.connectLogger().listen((event) {
     log('Rust log: $event');
   });
-
-  WidgetsFlutterBinding.ensureInitialized();
+  
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
   runApp(
