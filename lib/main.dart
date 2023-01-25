@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:tookey/deps.dart';
 import 'package:tookey/ffi.dart';
 import 'package:tookey/pages/auth.page.dart';
@@ -17,29 +18,59 @@ import 'package:uni_links/uni_links.dart';
 bool _initialUriIsHandled = false;
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  await SentryFlutter.init((options) {
+    options
+      ..dsn =
+          'https://bf7393ade2444f7a8c88e385d8b43ac1@o128657.ingest.sentry.io/4504565247049728'
+      // Set tracesSampleRate to 1.0 to capture 100% of transactions
+      // for performance monitoring.
+      // We recommend adjusting this value in production.
+      ..tracesSampleRate = 1.0;
+  }, appRunner: () async {
+    FlutterError.onError = Sentry.captureException;
+    PlatformDispatcher.instance.onError = (exception, stackTrace) {
+      Sentry.captureException(exception, stackTrace: stackTrace);
+      return false;
+    };
 
-  await dotenv.load();
-  final lib = loadLibrary('native');
-  api = NativeImpl(lib);
-  api.connectLogger().listen((event) {
-    log('Rust log: $event');
+    WidgetsFlutterBinding.ensureInitialized();
+
+
+    await Sentry.captureException(Exception('Start loading'));
+
+    await dotenv.load();
+    final lib = loadLibrary('native');
+
+    await Sentry.captureException(Exception('Lib loaded'));
+    api = NativeImpl(lib);
+    api.connectLogger().listen((event) {
+      log('Rust log: $event');
+    });
+    await Sentry.captureException(Exception('Api initied'));
+
+    
+
+    await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+
+
+    await Sentry.captureException(Exception('Run app'));
+    runApp(
+      ChangeNotifierProvider(
+        create: (context) {
+          final state = AppState();
+          
+          // ignore: cascade_invocations
+          state.initialize();
+          Sentry.captureException(Exception('State initialized'));
+          return state;
+        },
+        child: const MyApp(),
+      ),
+    );
   });
-  
-  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-
-  runApp(
-    ChangeNotifierProvider(
-      create: (context) {
-        final state = AppState();
-        // ignore: cascade_invocations
-        state.initialize();
-        return state;
-      },
-      child: const MyApp(),
-    ),
-  );
 }
+
+Future<void> initSentry() async {}
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
@@ -60,6 +91,8 @@ class _MyAppState extends State<MyApp> {
     super.initState();
     _initURIHandler();
     _incomingLinkHandler();
+
+    Sentry.captureException(Exception('Run app task exception'));
   }
 
   @override

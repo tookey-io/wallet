@@ -130,18 +130,22 @@ class BackendClient {
   Future<List<KeyRecord>> fetchKeys() async {
     log('fetchKeys');
 
-    final response = await client!.get<Map<String, dynamic>>(
-      '/api/keys',
-      options: Options(
-        headers: {
-          'accept': 'application/json',
-          'withAuthorization': true,
-        },
-      ),
-    );
+    if (_accessToken != null) {
+      final response = await client!.get<Map<String, dynamic>>(
+        '/api/keys',
+        options: Options(
+          headers: {
+            'accept': 'application/json',
+            'withAuthorization': true,
+          },
+        ),
+      );
 
-    final keys = KeysList.fromJson(response.data!);
-    return keys.items;
+      final keys = KeysList.fromJson(response.data!);
+      return keys.items;
+    } else {
+      return [];
+    }
   }
 
   Future<KeyRecord> generateKey({
