@@ -24,24 +24,56 @@ class _KeygenFormDialogState extends State<KeygenFormDialog> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 20),
-        const Icon(Icons.edit),
-        const SizedBox(height: 15),
-        const Text(
-          'Create new key',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        Row(
+          children: const [
+            Icon(Icons.edit),
+            SizedBox(width: 8),
+            Text(
+              'Create new key',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            ),
+          ],
         ),
-        const SizedBox(height: 15),
+        const SizedBox(height: 25),
         TextField(
           onChanged: (value) => widget.onNameChange(value),
-          decoration: const InputDecoration(labelText: 'Name:'),
+          decoration: const InputDecoration(
+            labelText: 'Title:',
+            fillColor: Colors.black12,
+            enabledBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.white12, width: 2),
+            ),
+            border: OutlineInputBorder(),
+          ),
         ),
         const SizedBox(height: 15),
         TextField(
           onChanged: (value) => widget.onDescriptionChange(value),
-          decoration: const InputDecoration(labelText: 'Description:'),
+          decoration: const InputDecoration(
+            labelText: 'Description:',
+            fillColor: Colors.black12,
+            enabledBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.white12, width: 2),
+            ),
+            border: OutlineInputBorder(),
+          ),
         ),
         const SizedBox(height: 15),
-        DialogButton(title: 'CREATE', onPressed: widget.onSubmit)
+        Row(
+          children: [
+            DialogButton(title: 'CREATE', onPressed: widget.onSubmit),
+            const SizedBox(width: 10),
+            DialogButton(
+              title: 'CANCEL',
+              buttonStyle: TextButton.styleFrom(
+                foregroundColor: Colors.white24,
+              ),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
       ],
     );
   }

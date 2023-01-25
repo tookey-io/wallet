@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'dart:developer';
+import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:tookey/services/http_client/http_client.dart';
+import 'package:tookey/widgets/toaster.dart';
 
 part 'backend_client.g.dart';
 
@@ -36,7 +38,7 @@ class BackendClient {
           final options = e.requestOptions;
 
           if (e.response?.statusCode == 401) {
-            if (options.headers['apiKey'] != null) return handler.next(e);
+            if (options.headers['X-SIGNIN-KEY'] != null) return handler.next(e);
             await refreshAccessToken();
 
             options.headers['Authorization'] = 'Bearer ${_accessToken!.token}';
@@ -63,13 +65,18 @@ class BackendClient {
 
     client = HttpClient(
       client: dio,
-      exceptionMapper: <T>(Response<T> response, exception) {
-        final data = response.data;
+      exceptionMapper: <T>(Response<T>? response, exception) {
+        final data = response?.data;
+
         if (data != null && data is Map<String, dynamic>) {
           return BackendException(
             message: data['message'] as String,
             exception: exception,
           );
+        }
+        if (exception.error is SocketException) {
+          final error = exception.error as SocketException;
+          Toaster.error(error.message, time: 2);
         }
         return null;
       },
@@ -115,7 +122,7 @@ class BackendClient {
       options: Options(
         headers: {
           'accept': 'application/json',
-          'apiKey': apiKey,
+          'X-SIGNIN-KEY': apiKey,
         },
       ),
     );
@@ -159,10 +166,8 @@ class BackendClient {
       data: {
         'participantsThreshold': 2,
         'participantsCount': 3,
-        'timeoutSeconds': 60,
-        'name': name ?? '',
-        'description': description ?? '',
-        'tags': ['shareable']
+        'participantIndex': 1,
+        'timeoutSeconds': 60
       },
       options: Options(
         headers: {

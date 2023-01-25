@@ -44,19 +44,26 @@ void store_dart_post_cobject(DartPostCObjectFnType ptr);
 
 void wire_connect_logger(int64_t port_);
 
-void wire_to_public_key(int64_t port_, struct wire_uint_8_list *key, bool _compressed);
+void wire_private_key_to_public_key(int64_t port_,
+                                    struct wire_uint_8_list *private_key,
+                                    bool compressed);
 
-void wire_to_ethereum_address(int64_t port_, struct wire_uint_8_list *key);
+void wire_private_key_to_ethereum_address(int64_t port_, struct wire_uint_8_list *private_key);
 
-void wire_to_message_hash(int64_t port_, struct wire_uint_8_list *tx_request);
+void wire_transaction_to_message_hash(int64_t port_, struct wire_uint_8_list *tx_request);
 
-void wire_convert_to_ethers_signature(int64_t port_,
-                                      struct wire_uint_8_list *tx_request,
-                                      struct wire_uint_8_list *signature);
+void wire_message_to_hash(int64_t port_, struct wire_uint_8_list *data);
+
+void wire_encode_message_signature(int64_t port_,
+                                   struct wire_uint_8_list *message_hash,
+                                   uint32_t chain_id,
+                                   struct wire_uint_8_list *signature_recid);
 
 void wire_encode_transaction(int64_t port_,
                              struct wire_uint_8_list *tx_request,
-                             struct wire_uint_8_list *signature);
+                             struct wire_uint_8_list *signature_recid);
+
+void wire_keygen(int64_t port_, struct wire_KeygenParams *params);
 
 void wire_keygen(int64_t port_, struct wire_KeygenParams *params);
 
@@ -75,10 +82,11 @@ void free_WireSyncReturnStruct(struct WireSyncReturnStruct val);
 static int64_t dummy_method_to_enforce_bundling(void) {
     int64_t dummy_var = 0;
     dummy_var ^= ((int64_t) (void*) wire_connect_logger);
-    dummy_var ^= ((int64_t) (void*) wire_to_public_key);
-    dummy_var ^= ((int64_t) (void*) wire_to_ethereum_address);
-    dummy_var ^= ((int64_t) (void*) wire_to_message_hash);
-    dummy_var ^= ((int64_t) (void*) wire_convert_to_ethers_signature);
+    dummy_var ^= ((int64_t) (void*) wire_private_key_to_public_key);
+    dummy_var ^= ((int64_t) (void*) wire_private_key_to_ethereum_address);
+    dummy_var ^= ((int64_t) (void*) wire_transaction_to_message_hash);
+    dummy_var ^= ((int64_t) (void*) wire_message_to_hash);
+    dummy_var ^= ((int64_t) (void*) wire_encode_message_signature);
     dummy_var ^= ((int64_t) (void*) wire_encode_transaction);
     dummy_var ^= ((int64_t) (void*) wire_keygen);
     dummy_var ^= ((int64_t) (void*) wire_sign);

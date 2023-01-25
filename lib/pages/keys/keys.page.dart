@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:tookey/pages/key/key.page.dart';
 import 'package:tookey/pages/keys/keys.popup.dart';
+import 'package:tookey/services/backend_client.dart';
 import 'package:tookey/state.dart';
 
 class KeysPage extends StatefulWidget {
@@ -13,6 +14,12 @@ class KeysPage extends StatefulWidget {
 }
 
 class _KeysPageState extends State<KeysPage> {
+  Future<List<KeyRecord>> fetchKeys() async {
+    final state = Provider.of<AppState>(context);
+    await state.fetchKeys();
+    return state.knownKeys;
+  }
+
   @override
   Widget build(BuildContext context) {
     final style = TextButton.styleFrom(
@@ -27,14 +34,22 @@ class _KeysPageState extends State<KeysPage> {
               TextButton(
                 style: style,
                 onPressed: () => state.signout(),
-                child: const Icon(Icons.logout, color: Colors.white,),
+                child: const Icon(
+                  Icons.logout,
+                  color: Colors.white,
+                ),
               ),
               const KeysPopup(),
             ],
           ),
-          body: Consumer<AppState>(
-            builder: (context, state, child) {
-              if (state.knownKeys.isNotEmpty) {
+          body: FutureBuilder(
+            future: fetchKeys(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              if (snapshot.data != null) {
                 return ListView(
                   children: [
                     ...state.knownKeys.map(
@@ -47,7 +62,10 @@ class _KeysPageState extends State<KeysPage> {
                             Text(key.name),
                             Text(
                               key.publicKey,
-                              style: const TextStyle(fontSize: 8),
+                              style: const TextStyle(
+                                fontSize: 8,
+                                color: Colors.white60,
+                              ),
                             )
                           ],
                         ),
@@ -109,10 +127,10 @@ class _KeysPageState extends State<KeysPage> {
               }
             },
           ),
-          bottomNavigationBar: BottomAppBar(
-            shape: const CircularNotchedRectangle(),
-            child: Container(height: 45),
-          ),
+          // bottomNavigationBar: BottomAppBar(
+          //   shape: const CircularNotchedRectangle(),
+          //   child: Container(height: 45),
+          // ),
         );
       },
     );

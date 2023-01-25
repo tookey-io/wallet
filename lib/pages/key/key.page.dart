@@ -8,6 +8,7 @@ import 'package:tookey/pages/wallet_connect/wallet_connect.page.dart';
 import 'package:tookey/services/backend_client.dart';
 import 'package:tookey/services/qr_scanner.dart';
 import 'package:tookey/state.dart';
+import 'package:tookey/widgets/toaster.dart';
 
 enum KeyAction { share }
 
@@ -83,13 +84,20 @@ class _KeyPageState extends State<KeyPage> {
                       ),
                       const Padding(padding: EdgeInsets.all(10)),
                       Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Flexible(
                             child: TextField(
                               decoration: const InputDecoration(
-                                helperText: 'Enter connection string',
+                                isDense: true,
+                                label: Text('Connection string'),
+                                fillColor: Colors.black12,
+                                enabledBorder: OutlineInputBorder(
+                                  borderSide: BorderSide(
+                                      color: Colors.white12, width: 2),
+                                ),
+                                border: OutlineInputBorder(),
                               ),
-                              style: Theme.of(context).textTheme.bodyText1,
                               onChanged: (value) => setState(() {
                                 _connectionUrl = value;
                               }),
@@ -98,6 +106,9 @@ class _KeyPageState extends State<KeyPage> {
                           const SizedBox(width: 10),
                           ElevatedButton(
                             onPressed: () => _connect(_connectionUrl),
+                            style: ElevatedButton.styleFrom(
+                              minimumSize: const Size(0, 50),
+                            ),
                             child: Row(
                               children: const [
                                 Icon(Icons.cast_connected),
@@ -145,10 +156,14 @@ class _KeyPageState extends State<KeyPage> {
                     return QRScanner(
                       onData: (value) {
                         Navigator.pop(context);
-                        setState(() {
-                          _connectionUrl = value;
-                        });
-                        _connect(_connectionUrl);
+                        if (value.startsWith('wc:')) {
+                          setState(() {
+                            _connectionUrl = value;
+                          });
+                          _connect(_connectionUrl);
+                        } else {
+                          Toaster.error('Incorrect QR Code');
+                        }
                       },
                     );
                   },

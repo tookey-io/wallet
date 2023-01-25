@@ -171,21 +171,7 @@ class _MyAppState extends State<MyApp> {
     debugPrint('_currentUri ${_currentUri.toString()}');
     if (_err != null) debugPrint('_err ${_err.toString()}');
 
-    const blackPrimaryValue = 0xFF000000;
-    const blackMaterial = MaterialColor(blackPrimaryValue, <int, Color>{
-      50: Color(blackPrimaryValue),
-      100: Color(blackPrimaryValue),
-      200: Color(blackPrimaryValue),
-      300: Color(blackPrimaryValue),
-      400: Color(blackPrimaryValue),
-      500: Color(blackPrimaryValue),
-      600: Color(blackPrimaryValue),
-      700: Color(blackPrimaryValue),
-      800: Color(blackPrimaryValue),
-      900: Color(blackPrimaryValue),
-    });
-
-    var tookeyTheme = FlexThemeData.dark(
+    final tookeyTheme = FlexThemeData.dark(
       scheme: FlexScheme.custom,
       appBarStyle: FlexAppBarStyle.surface,
       darkIsTrueBlack: true,

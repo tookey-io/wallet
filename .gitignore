@@ -106,9 +106,6 @@ jniLibs
 !ios/**/default.pbxuser
 !ios/**/default.perspectivev3
 
-Cargo.lock
-pubspec.lock
-
 .cxx
 
 *keystore.json
