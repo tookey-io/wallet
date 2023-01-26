@@ -110,7 +110,5 @@ jniLibs
 
 *keystore.json
 
-.env
-
 lib/bridge_generated.dart
 lib/bridge_generated.freezed.dart
