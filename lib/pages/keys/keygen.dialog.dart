@@ -8,6 +8,8 @@ import 'package:tookey/state.dart';
 import 'package:tookey/widgets/dialog/dialog_button.dart';
 import 'package:tookey/widgets/dialog/dialog_progress.dart';
 
+import '../export-key.dialog.dart';
+
 class KeygenDialog extends StatefulWidget {
   const KeygenDialog({super.key});
 
@@ -87,10 +89,16 @@ class _KeygenDialogState extends State<KeygenDialog> {
                   DialogButton(
                     title: 'SAVE A BACKUP',
                     onPressed: () async {
-                      await state.shareKey(
-                        key: adminKey.shareableKey,
-                        name: adminKey.publicKey,
+                      // ignore: inference_failure_on_function_invocation
+                      await showDialog(
+                        context: context,
+                        builder: (context) => ExportKeyDialog(
+                          keyData: adminKey.shareableKey,
+                          name: adminKey.publicKey,
+                          subject: 'Backup owner key',
+                        ),
                       );
+                      
                       if (mounted) {
                         Navigator.pop(context);
                         Navigator.pop(ctx);
@@ -156,7 +164,10 @@ class _KeygenDialogState extends State<KeygenDialog> {
           builder: (context, state, child) {
             if (isExecuting) {
               return DialogProgress(
-                title: 'Keygeneration progress',
+                title: 'Key generation',
+                // ignore: lines_longer_than_80_chars
+                description:
+                    'We sent approval request to your telegram account',
                 onCancel: _onCancel,
               );
             }

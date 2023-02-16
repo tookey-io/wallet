@@ -8,7 +8,7 @@ class KeyPopup extends StatelessWidget {
   const KeyPopup({super.key});
 
   Future<void> _shareKey(AppState state) async {
-    await state.shareKey();
+    await state.shareKey(subject: 'Share key');
   }
 
   @override
@@ -26,7 +26,7 @@ class KeyPopup extends StatelessWidget {
           const PopupMenuItem<KeyPopupAction>(
             value: KeyPopupAction.share,
             child: ListTile(
-              title: Text('Export key'),
+              title: Text('Share key'),
               leading: Icon(Icons.download),
             ),
           ),

@@ -97,13 +97,11 @@ class AppState extends ChangeNotifier {
   }
 
   List<KeyRecord> get knownKeys => _knownKeys.values
-      // .where((element) => _secretKeys.contains(element.publicKey))
+      .where((element) => _secretKeys.contains(element.publicKey))
       .toList();
 
   List<String> get availableKeys {
-    final list = knownKeys.map((k) => k.publicKey).toList();
-    // ignore: cascade_invocations
-    list.addAll(_secretKeys);
+    final list = _knownKeys.values.map((k) => k.publicKey).toList();
     return list;
   }
 
@@ -139,7 +137,7 @@ class AppState extends ChangeNotifier {
     return;
   }
 
-  Future<void> shareKey({String? key, String? name}) async {
+  Future<void> shareKey({String? key, String? name, String? subject}) async {
     key ??= await readShareableKey();
     name ??= _shareableKey;
     if (key == null) throw ArgumentError('Key not found');
@@ -158,7 +156,7 @@ class AppState extends ChangeNotifier {
     final filePath = path.join(xfile.path, fileName);
     await xfile.saveTo(filePath);
 
-    await Share.shareXFiles([XFile(filePath)], subject: 'Backup Key');
+    await Share.shareXFiles([XFile(filePath)], subject: subject);
   }
 
   Future<String> sendSignedTransaction(Uint8List signedTransaction) async {
