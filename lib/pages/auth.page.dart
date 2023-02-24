@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 import 'package:tookey/services/qr_scanner.dart';
 import 'package:tookey/state.dart';
 import 'package:tookey/widgets/toaster.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class AuthPage extends StatefulWidget {
   const AuthPage({super.key, required this.title});
@@ -49,12 +50,40 @@ class _AuthPageState extends State<AuthPage> {
     if (dotenv.env['TEST_ENV'] != null) return state.signin('');
 
     final bot = dotenv.env['TELEGRAM_BOT'];
-    final appLink = 'tg://resolve?domain=$bot&start=YXBwPWF1dGg';
 
-    if (Platform.isIOS || Platform.isAndroid) {
+    if (Platform.isAndroid) {
+      final installedApps = await AppCheck.getInstalledApps();
+      debugPrint(installedApps.toString());
+
+      final appLink = 'tg://resolve?domain=$bot&start=YXBwPWF1dGg';
+      // final appLink = 'https://t.me/$bot?start=YXBwPWF1dGg';
+      final url = Uri.parse(appLink);
+      log('Launch $url');
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalNonBrowserApplication)
+            .catchError((dynamic err) async {
+          debugPrint(err.toString());
+          await Toaster.error(
+            'Cannot launch url: ${url.toString()}',
+            gravity: ToastGravity.BOTTOM,
+          );
+        });
+      } else {
+        await Toaster.error(
+          'Cannot open url: ${url.toString()}',
+          gravity: ToastGravity.BOTTOM,
+        );
+      }
+      // await AppCheck.launchApp(appLink).catchError((err) {
+      //   Toaster.error('Telegram not found!', gravity: ToastGravity.BOTTOM);
+      // });
+    }
+
+    if (Platform.isIOS) {
       final package = Platform.isIOS ? 'tg://' : 'org.telegram.messenger';
       final app = await AppCheck.checkAvailability(package);
       if (app?.packageName != null) {
+        final appLink = 'tg://resolve?domain=$bot&start=YXBwPWF1dGg';
         await AppCheck.launchApp(appLink).catchError((err) {
           Toaster.error('Telegram not found!', gravity: ToastGravity.BOTTOM);
         });

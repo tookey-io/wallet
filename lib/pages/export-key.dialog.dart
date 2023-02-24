@@ -1,11 +1,9 @@
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
+import 'package:tookey/state.dart';
 import 'package:tookey/widgets/dialog/dialog_button.dart';
-
-import '../state.dart';
 
 class ExportKeyDialog extends StatefulWidget {
   const ExportKeyDialog({
@@ -90,30 +88,32 @@ class _ExportKeyDialogState extends State<ExportKeyDialog> {
                       ]
                     : [
                         DialogButton(
-                            title: 'Saved',
-                            expanded: true,
-                            onPressed: () {
-                              log('clicked stored');
-                              Navigator.pop(context);
-                            }),
+                          title: 'Saved',
+                          expanded: true,
+                          onPressed: () {
+                            log('clicked stored');
+                            Navigator.pop(context);
+                          },
+                        ),
                         DialogButton(
-                            title: 'Again',
-                            expanded: true,
-                            onPressed: () async {
-                              setState(() {
-                                _exporting = true;
-                              });
+                          title: 'Again',
+                          expanded: true,
+                          onPressed: () async {
+                            setState(() {
+                              _exporting = true;
+                            });
 
-                              await state.shareKey(
-                                key: widget.keyData,
-                                name: widget.name,
-                                subject: widget.subject,
-                              );
+                            await state.shareKey(
+                              key: widget.keyData,
+                              name: widget.name,
+                              subject: widget.subject,
+                            );
 
-                              setState(() {
-                                _exporting = false;
-                              });
-                            }),
+                            setState(() {
+                              _exporting = false;
+                            });
+                          },
+                        ),
                       ],
               )
             ],

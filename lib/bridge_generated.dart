@@ -18,6 +18,11 @@ abstract class Native {
 
   FlutterRustBridgeTaskConstMeta get kConnectLoggerConstMeta;
 
+  Future<String> publicKeyToEthereumAddress(
+      {required String publicKey, dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kPublicKeyToEthereumAddressConstMeta;
+
   Future<String> privateKeyToPublicKey(
       {required String privateKey, required bool compressed, dynamic hint});
 
@@ -140,6 +145,25 @@ class NativeImpl implements Native {
       const FlutterRustBridgeTaskConstMeta(
         debugName: "connect_logger",
         argNames: [],
+      );
+
+  Future<String> publicKeyToEthereumAddress(
+      {required String publicKey, dynamic hint}) {
+    var arg0 = _platform.api2wire_String(publicKey);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) =>
+          _platform.inner.wire_public_key_to_ethereum_address(port_, arg0),
+      parseSuccessData: _wire2api_String,
+      constMeta: kPublicKeyToEthereumAddressConstMeta,
+      argValues: [publicKey],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kPublicKeyToEthereumAddressConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "public_key_to_ethereum_address",
+        argNames: ["publicKey"],
       );
 
   Future<String> privateKeyToPublicKey(
@@ -483,6 +507,24 @@ class NativeWire implements FlutterRustBridgeWireBase {
           'wire_connect_logger');
   late final _wire_connect_logger =
       _wire_connect_loggerPtr.asFunction<void Function(int)>();
+
+  void wire_public_key_to_ethereum_address(
+    int port_,
+    ffi.Pointer<wire_uint_8_list> public_key,
+  ) {
+    return _wire_public_key_to_ethereum_address(
+      port_,
+      public_key,
+    );
+  }
+
+  late final _wire_public_key_to_ethereum_addressPtr = _lookup<
+          ffi.NativeFunction<
+              ffi.Void Function(ffi.Int64, ffi.Pointer<wire_uint_8_list>)>>(
+      'wire_public_key_to_ethereum_address');
+  late final _wire_public_key_to_ethereum_address =
+      _wire_public_key_to_ethereum_addressPtr
+          .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
 
   void wire_private_key_to_public_key(
     int port_,

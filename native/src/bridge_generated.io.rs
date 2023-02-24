@@ -7,6 +7,11 @@ pub extern "C" fn wire_connect_logger(port_: i64) {
 }
 
 #[no_mangle]
+pub extern "C" fn wire_public_key_to_ethereum_address(port_: i64, public_key: *mut wire_uint_8_list) {
+    wire_public_key_to_ethereum_address_impl(port_, public_key)
+}
+
+#[no_mangle]
 pub extern "C" fn wire_private_key_to_public_key(port_: i64, private_key: *mut wire_uint_8_list, compressed: bool) {
     wire_private_key_to_public_key_impl(port_, private_key, compressed)
 }

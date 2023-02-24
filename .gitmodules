@@ -1,3 +1,6 @@
 [submodule "vendor/gmp"]
 	path = vendor/gmp
 	url = https://github.com/Rupan/gmp.git
+[submodule "packages/web3dart"]
+	path = packages/web3dart
+	url = https://github.com/tookey-io/web3dart.git

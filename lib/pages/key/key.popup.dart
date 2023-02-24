@@ -13,29 +13,31 @@ class KeyPopup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AppState>(builder: (context, state, child) {
-      return PopupMenuButton(
-        onSelected: (method) {
-          switch (method) {
-            case KeyPopupAction.share:
-              _shareKey(state);
-              break;
-          }
-        },
-        itemBuilder: (context) => <PopupMenuEntry<KeyPopupAction>>[
-          const PopupMenuItem<KeyPopupAction>(
-            value: KeyPopupAction.share,
-            child: ListTile(
-              title: Text('Share key'),
-              leading: Icon(Icons.download),
+    return Consumer<AppState>(
+      builder: (context, state, child) {
+        return PopupMenuButton(
+          onSelected: (method) {
+            switch (method) {
+              case KeyPopupAction.share:
+                _shareKey(state);
+                break;
+            }
+          },
+          itemBuilder: (context) => <PopupMenuEntry<KeyPopupAction>>[
+            const PopupMenuItem<KeyPopupAction>(
+              value: KeyPopupAction.share,
+              child: ListTile(
+                title: Text('Share key'),
+                leading: Icon(Icons.download),
+              ),
             ),
+          ],
+          child: Container(
+            padding: const EdgeInsets.all(15),
+            child: const Icon(Icons.more_horiz_outlined),
           ),
-        ],
-        child: Container(
-          padding: const EdgeInsets.all(15),
-          child: const Icon(Icons.more_horiz_outlined),
-        ),
-      );
-    });
+        );
+      },
+    );
   }
 }

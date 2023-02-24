@@ -2,13 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:tookey/pages/export-key.dialog.dart';
 import 'package:tookey/pages/keys/keygen_form.dialog.dart';
 import 'package:tookey/services/backend_client.dart';
 import 'package:tookey/state.dart';
 import 'package:tookey/widgets/dialog/dialog_button.dart';
 import 'package:tookey/widgets/dialog/dialog_progress.dart';
-
-import '../export-key.dialog.dart';
 
 class KeygenDialog extends StatefulWidget {
   const KeygenDialog({super.key});

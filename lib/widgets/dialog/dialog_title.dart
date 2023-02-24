@@ -17,8 +17,8 @@ class DialogTitle extends StatelessWidget {
       children: [
         if (icon != null)
           Container(
-            height: 100,
-            width: 100,
+            height: 48,
+            width: 48,
             padding: const EdgeInsets.only(bottom: 8),
             child: Image.network(
               icon!,

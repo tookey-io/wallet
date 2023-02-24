@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'dart:convert';
 import 'dart:core';
 import 'dart:developer';
 
@@ -11,7 +12,9 @@ import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:tookey/ffi.dart';
+import 'package:tookey/models/key_session.dart';
 import 'package:tookey/services/backend_client.dart';
+import 'package:tookey/services/networks.dart';
 import 'package:web3dart/web3dart.dart';
 
 String _keysList() => 'storage:KEYS';
@@ -20,17 +23,102 @@ String _key(String id) => 'storage:KEY:$id';
 
 String _refreshTokenStorage() => 'storage:TOKEN:REFRESH';
 
+String _sessionList() => 'storage:SESSIONS';
+
+String _session(String key) => 'storage:SESSION:$key';
+
 class AppState extends ChangeNotifier {
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
   final Set<String> _secretKeys = {};
+  final Set<String> _sessionKeys = {};
   final HashMap<String, KeyRecord> _knownKeys = HashMap();
   final String relayUrl = dotenv.env['RELAY_URL'] ?? '';
   final String backendApiUrl = dotenv.env['BACKEND_API_URL'] ?? '';
+
+  final HashMap<String, Network> _networks = HashMap();
 
   String? _shareableKey;
   String? _ownerKey;
   AuthToken? _refreshToken;
   BackendClient? backend;
+
+  Future<void> removeAllSessions() async {
+    _sessionKeys.removeAll(_sessionKeys.toList());
+    await _storage.write(key: _sessionList(), value: _sessionKeys.join(':'));
+
+    notifyListeners();
+  }
+
+  Future<void> removeSession(KeySession session) async {
+    final hash = session.hashCode.toString();
+
+    log('remove session $hash');
+    log('known sessions: ${_sessionKeys.join(', ')}');
+
+    if (_sessionKeys.contains(hash)) {
+      _sessionKeys.remove(hash);
+      await _storage.write(key: _sessionList(), value: _sessionKeys.join(':'));
+      await _storage.delete(key: _session(hash));
+      notifyListeners();
+    }
+  }
+
+  Future<void> saveSession(KeySession session) async {
+    final hash = session.hashCode.toString();
+
+    log('save session $hash');
+
+    if (!_sessionKeys.contains(hash)) {
+      _sessionKeys.add(hash);
+      await _storage.write(key: _sessionList(), value: _sessionKeys.join(':'));
+      await _storage.write(
+        key: _session(hash),
+        value: jsonEncode(session.toJson()),
+      );
+      notifyListeners();
+    }
+  }
+
+  Future<List<KeySession>> readSessions() async {
+    log('read sessions');
+    return Future.wait(
+      _sessionKeys.map(
+        (key) => _storage.read(key: _session(key)).then(
+              (raw) => raw != null
+                  ? KeySession.fromJson(
+                      jsonDecode(raw) as Map<String, dynamic>,
+                    )
+                  : null,
+            ),
+      ),
+    ).then(
+      (map) => map.whereType<KeySession>().toList(),
+    );
+  }
+
+  Network getNetwork(int chainId) {
+    return networks.firstWhere(
+      (element) => element.chainId == chainId,
+    );
+  }
+
+  void addNetwork(Network network) {
+    if (!_networks.containsKey(network.name)) {
+      _networks[network.name] = network;
+
+      notifyListeners();
+    }
+  }
+
+  void addNetworks(Iterable<Network> networks) {
+    for (final n in networks) {
+      addNetwork(n);
+    }
+  }
+
+  Iterable<Network> get networks => _networks.values;
+
+  List<String> get secretKeys => _secretKeys.toList();
 
   Future<void> initialize() async {
     await _loadStorage();
@@ -96,14 +184,13 @@ class AppState extends ChangeNotifier {
         : null;
   }
 
-  List<KeyRecord> get knownKeys => _knownKeys.values
-      .where((element) => _secretKeys.contains(element.publicKey))
-      .toList();
+  List<KeyRecord> get allKeys => _knownKeys.values.toList();
 
-  List<String> get availableKeys {
-    final list = _knownKeys.values.map((k) => k.publicKey).toList();
-    return list;
-  }
+  List<KeyRecord> get unknownKeys =>
+      allKeys.where((k) => !_secretKeys.contains(k.publicKey)).toList();
+
+  List<KeyRecord> get knownKeys =>
+      allKeys.where((k) => _secretKeys.contains(k.publicKey)).toList();
 
   Future<void> _loadStorage() async {
     // await _storage.deleteAll();
@@ -114,7 +201,13 @@ class AppState extends ChangeNotifier {
     _secretKeys.addAll(
       await _storage
           .read(key: _keysList())
-          .then((raw) => raw?.split(';') ?? []),
+          .then((raw) => raw?.split(':') ?? []),
+    );
+
+    _sessionKeys.addAll(
+      await _storage
+          .read(key: _sessionList())
+          .then((raw) => raw?.split(':') ?? []),
     );
 
     notifyListeners();
@@ -164,12 +257,18 @@ class AppState extends ChangeNotifier {
     return ethClient.sendRawTransaction(signedTransaction);
   }
 
-  Future<void> importKey(String importedKey) async {
+  Future<String> importKey(String importedKey) async {
+    log('start import key');
     final publicKey = await api.privateKeyToPublicKey(
-        privateKey: importedKey, compressed: true);
+      privateKey: importedKey,
+      compressed: true,
+    );
 
-    // TODO(temadev): backend, save to participants, approve
+    log(publicKey);
+
     await addKey(publicKey, importedKey);
+
+    return publicKey;
   }
 
   Future<List<Keystore>> generateKey(String? name, String? description) async {
@@ -192,10 +291,13 @@ class AppState extends ChangeNotifier {
     }
 
     final results = await Future.wait(
-        [api.keygen(params: paramsFor(2)), api.keygen(params: paramsFor(3))]);
+      [api.keygen(params: paramsFor(2)), api.keygen(params: paramsFor(3))],
+    );
 
     final publicKey = await api.privateKeyToPublicKey(
-        privateKey: results[0].key!, compressed: true);
+      privateKey: results[0].key!,
+      compressed: true,
+    );
 
     log('Key is $publicKey');
 
@@ -242,6 +344,7 @@ class AppState extends ChangeNotifier {
 
   Future<void> fetchKeys() async {
     final keys = await backend?.fetchKeys();
+
     _knownKeys
       ..clear()
       ..addEntries(
@@ -262,12 +365,6 @@ class AppState extends ChangeNotifier {
     log('signout');
     refreshToken = null;
     notifyListeners();
-  }
-
-  Future<int> chainId() async {
-    final ethClient = Web3Client(dotenv.env['NODE_URL']!, Client());
-
-    return (await ethClient.getChainId()).toInt();
   }
 }
 

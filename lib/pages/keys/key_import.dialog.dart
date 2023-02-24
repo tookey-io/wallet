@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -16,38 +17,48 @@ class KeyImportDialog extends StatefulWidget {
 }
 
 class _KeyImportDialogState extends State<KeyImportDialog> {
-  List<PlatformFile>? _paths;
-  String? _fileName;
+  File? _file;
   bool _isExecuting = true;
 
   Future<void> _pickFiles() async {
+    if (!mounted) return;
     _resetState();
     try {
-      _paths = (await FilePicker.platform.pickFiles(
+      final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         onFileLoading: (FilePickerStatus status) => log(status.toString()),
         allowedExtensions: ['json'],
-      ))
-          ?.files;
+      );
+
+      if (result != null && result.files.single.path != null) {
+        final keyFile = File(result.files.single.path!);
+        log(keyFile.path);
+        log(keyFile.absolute.path);
+
+        setState(() {
+          _isExecuting = false;
+          _file = keyFile.absolute;
+        });
+      } else {
+        await Toaster.error('Unable to load file');
+      }
     } on PlatformException catch (e) {
       _logException('Unsupported operation ${e.toString()}');
     } catch (e) {
       _logException(e.toString());
     }
-    if (!mounted) return;
-    setState(() {
-      _isExecuting = false;
-      _fileName =
-          _paths != null ? _paths!.map((e) => e.name).toString() : '...';
-    });
+    // setState(() {
+    //   _isExecuting = false;
+    //   _fileName =
+    //       _paths != null ? _paths!.map((e) => e.name).toString() : '...';
+    // });
   }
 
   void _resetState() {
     if (!mounted) return;
     setState(() {
       _isExecuting = true;
-      _fileName = null;
-      _paths = null;
+      _file = null;
     });
   }
 
@@ -59,12 +70,18 @@ class _KeyImportDialogState extends State<KeyImportDialog> {
   Future<void> _importKey(AppState state) async {
     log('_importKey');
 
-    if (_paths == null) return;
+    log(_file?.path ?? 'no file');
 
-    final key = await rootBundle.loadString(_paths!.first.path!);
-    await state.importKey(key);
+    if (_file == null) return;
 
-    await _successDialog(_fileName!);
+    final key = await _file?.readAsString();
+    if (key != null) {
+      final publicKey = await state.importKey(key);
+      log(publicKey);
+      await _successDialog(publicKey);
+    } else {
+      log('no key data');
+    }
   }
 
   Future<void> _successDialog(String text) {
@@ -106,8 +123,8 @@ class _KeyImportDialogState extends State<KeyImportDialog> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isExecuting && _fileName == null) _pickFiles();
-    if (!_isExecuting && _fileName == '...') Navigator.pop(context);
+    if (_isExecuting && _file == null) _pickFiles();
+    if (!_isExecuting && _file == null) Navigator.pop(context);
 
     return SimpleDialog(
       title: Column(
@@ -123,8 +140,8 @@ class _KeyImportDialogState extends State<KeyImportDialog> {
         Column(
           children: [
             const SizedBox(height: 20),
-            if (_fileName != null)
-              Text(_fileName!)
+            if (_file != null)
+              Text(_file!.path)
             else
               const CircularProgressIndicator(),
             const SizedBox(height: 15),

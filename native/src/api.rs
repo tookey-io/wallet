@@ -1,3 +1,4 @@
+
 use flutter_rust_bridge::{frb, StreamSink};
 use std::sync::{Mutex, RwLock};
 use tokio::runtime::Runtime;
@@ -38,6 +39,11 @@ pub fn connect_logger(stream: StreamSink<String>) -> anyhow::Result<()> {
 
     log("Logger is initialized".to_string())?;
     Ok(())
+}
+
+#[allow(dead_code)]
+pub fn public_key_to_ethereum_address(public_key: String) -> anyhow::Result<String> {
+    tookey_libtss_ethereum::ethers::public_key_to_ethereum_address(public_key)
 }
 
 pub fn private_key_to_public_key(private_key: String, compressed: bool) -> anyhow::Result<String> {

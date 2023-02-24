@@ -10,6 +10,8 @@ import 'package:tookey/ffi.dart';
 import 'package:tookey/services/backend_client.dart';
 import 'package:tookey/state.dart';
 import 'package:tookey/tookey_transaction.dart';
+import 'package:tookey/widgets/details/message_details.dart';
+import 'package:tookey/widgets/details/transaction_details.dart';
 import 'package:tookey/widgets/dialog/dialog_button.dart';
 import 'package:tookey/widgets/dialog/dialog_progress.dart';
 import 'package:tookey/widgets/dialog/dialog_title.dart';
@@ -27,6 +29,7 @@ class WalletConnectSignDialog extends StatefulWidget {
     required this.title,
     this.icon,
     this.metadata,
+    required this.chainId,
   });
 
   final void Function({String? result}) onSign;
@@ -37,6 +40,7 @@ class WalletConnectSignDialog extends StatefulWidget {
   final String title;
   final String? icon;
   final Map<String, dynamic>? metadata;
+  final int chainId;
 
   @override
   State<WalletConnectSignDialog> createState() =>
@@ -92,7 +96,7 @@ class _WalletConnectSignDialogState extends State<WalletConnectSignDialog> {
           messageHash,
           widget.metadata,
         );
-        final chainId = await state.chainId();
+        final chainId = widget.chainId;
         final result = await api.encodeMessageSignature(
           messageHash: messageHash,
           chainId: chainId,
@@ -130,46 +134,55 @@ class _WalletConnectSignDialogState extends State<WalletConnectSignDialog> {
       );
     }
 
+    final state = Provider.of<AppState>(context, listen: false);
+
     return SimpleDialog(
       title: DialogTitle(title: widget.title, icon: widget.icon),
       contentPadding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       children: [
-        Container(
-          alignment: Alignment.center,
-          padding: const EdgeInsets.only(bottom: 8),
-          child: const Text(
-            'Sign Message',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        // Container(
+        //   alignment: Alignment.center,
+        //   padding: const EdgeInsets.only(bottom: 8),
+        //   child: const Text(
+        //     'Sign Message',
+        //     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        //   ),
+        // ),
+        if (widget.tx != null)
+          TransactionDetails(
+            tx: widget.tx!,
+            chainId: widget.chainId,
+            network: state.getNetwork(widget.chainId),
           ),
-        ),
-        Theme(
-          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: ExpansionTile(
-              tilePadding: EdgeInsets.zero,
-              title: const Text(
-                'Message',
-                style: TextStyle(fontSize: 16),
-              ),
-              children: [
-                Text(
-                  [
-                    'To: ${widget.tx?.to}',
-                    'Gas limit: ${widget.tx?.gasLimit}',
-                    'Gas price: ${widget.tx?.gasPrice}',
-                    widget.data!
-                  ].join('\n'),
-                  textAlign: TextAlign.left,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontFamily: Platform.isIOS ? 'Courier' : 'monospace',
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+        if (widget.message != null) MessageDetails(message: widget.message!),
+        // Theme(
+        //   data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        //   child: Padding(
+        //     padding: const EdgeInsets.only(bottom: 8),
+        //     child: ExpansionTile(
+        //       tilePadding: EdgeInsets.zero,
+        //       title: const Text(
+        //         'Message',
+        //         style: TextStyle(fontSize: 16),
+        //       ),
+        //       children: [
+        //         Text(
+        //           [
+        //             'To: ${widget.tx?.to}',
+        //             'Gas limit: ${widget.tx?.gasLimit}',
+        //             'Gas price: ${widget.tx?.gasPrice}',
+        //             widget.data!
+        //           ].join('\n'),
+        //           textAlign: TextAlign.left,
+        //           style: TextStyle(
+        //             fontSize: 13,
+        //             fontFamily: Platform.isIOS ? 'Courier' : 'monospace',
+        //           ),
+        //         ),
+        //       ],
+        //     ),
+        //   ),
+        // ),
         Consumer<AppState>(
           builder: (context, state, child) {
             return Row(

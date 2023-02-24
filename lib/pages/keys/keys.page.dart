@@ -60,8 +60,8 @@ class _KeysPageState extends State<KeysPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(key.name),
-                            Text(
-                              key.publicKey,
+                            if (key.description.isNotEmpty) Text(
+                              key.description,
                               style: const TextStyle(
                                 fontSize: 8,
                                 color: Colors.white60,
@@ -81,26 +81,35 @@ class _KeysPageState extends State<KeysPage> {
                         },
                       ),
                     ),
-                    ...state.availableKeys
-                        .where(
-                          (key) => !state.knownKeys
-                              .map((k) => k.publicKey)
-                              .contains(key),
-                        )
-                        .map(
-                          (id) => ListTile(
-                            key: Key(id),
-                            leading: const Icon(Icons.key_off),
-                            title: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text('Unlinked key'),
-                                Text(id, style: const TextStyle(fontSize: 8))
-                              ],
+                    ...state.unknownKeys.map(
+                      (key) => ListTile(
+                        key: Key(key.publicKey),
+                        leading: const Icon(Icons.key_off),
+                        title: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(key.name),
+                            if (key.description.isNotEmpty) Text(
+                              key.description,
+                              style: const TextStyle(
+                                fontSize: 8,
+                                color: Colors.white60,
+                              ),
+                            )
+                          ],
+                        ),
+                        onTap: () {
+                          state.shareableKey = key.publicKey;
+
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute<KeyPage>(
+                              builder: (context) => KeyPage(keyRecord: key),
                             ),
-                            onTap: () {},
-                          ),
-                        )
+                          );
+                        },
+                      ),
+                    ),
                   ],
                 );
               } else {

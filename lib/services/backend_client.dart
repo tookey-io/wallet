@@ -134,8 +134,12 @@ class BackendClient {
     return authTokens.refresh;
   }
 
-  Future<List<KeyRecord>> fetchKeys() async {
+  Future<List<KeyRecord>?> fetchKeys() async {
     log('fetchKeys');
+
+    if (_accessToken == null) {
+      await refreshAccessToken();
+    }
 
     if (_accessToken != null) {
       final response = await client!.get<Map<String, dynamic>>(
@@ -148,10 +152,11 @@ class BackendClient {
         ),
       );
 
+      log(response.data.toString());
       final keys = KeysList.fromJson(response.data!);
       return keys.items;
     } else {
-      return [];
+      return null;
     }
   }
 
@@ -164,6 +169,8 @@ class BackendClient {
     final response = await client!.post<Map<String, dynamic>>(
       '/api/keys',
       data: {
+        if (name != null) 'name': name,
+        if (description != null) 'description': description,
         'participantsThreshold': 2,
         'participantsCount': 3,
         'participantIndex': 1,

@@ -27,39 +27,41 @@ class KeysPopup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AppState>(builder: (context, state, child) {
-      return PopupMenuButton(
-        onSelected: (method) {
-          switch (method) {
-            case KeysPopupAction.import:
-              _showImportKeyDialog(context);
-              break;
-            default:
-              _showKeygenDialog(context);
-              break;
-          }
-        },
-        itemBuilder: (context) => <PopupMenuEntry<KeysPopupAction>>[
-          const PopupMenuItem<KeysPopupAction>(
-            value: KeysPopupAction.import,
-            child: ListTile(
-              title: Text('Import a key'),
-              leading: Icon(Icons.file_download),
+    return Consumer<AppState>(
+      builder: (context, state, child) {
+        return PopupMenuButton(
+          onSelected: (method) {
+            switch (method) {
+              case KeysPopupAction.import:
+                _showImportKeyDialog(context);
+                break;
+              default:
+                _showKeygenDialog(context);
+                break;
+            }
+          },
+          itemBuilder: (context) => <PopupMenuEntry<KeysPopupAction>>[
+            const PopupMenuItem<KeysPopupAction>(
+              value: KeysPopupAction.import,
+              child: ListTile(
+                title: Text('Import a key'),
+                leading: Icon(Icons.file_download),
+              ),
             ),
-          ),
-          const PopupMenuItem<KeysPopupAction>(
-            value: KeysPopupAction.generate,
-            child: ListTile(
-              title: Text('Generate new key'),
-              leading: Icon(Icons.generating_tokens),
+            const PopupMenuItem<KeysPopupAction>(
+              value: KeysPopupAction.generate,
+              child: ListTile(
+                title: Text('Generate new key'),
+                leading: Icon(Icons.generating_tokens),
+              ),
             ),
+          ],
+          child: Container(
+            padding: const EdgeInsets.all(15),
+            child: const Icon(Icons.add),
           ),
-        ],
-        child: Container(
-          padding: const EdgeInsets.all(15),
-          child: const Icon(Icons.add),
-        ),
-      );
-    });
+        );
+      },
+    );
   }
 }

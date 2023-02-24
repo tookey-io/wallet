@@ -17,4 +17,4 @@ tokio = { version = "1", default-features = false, features = ["rt", "rt-multi-t
 flutter_rust_bridge = "1"
 
 tookey-libtss = { version = "1.2", default-features = false, features = ["bigint"] }
-tookey-libtss-ethereum = { version = "1.2", default-features = false, features = ["rust", "bigint"] }
+tookey-libtss-ethereum = { version = "1.2.1", default-features = false, features = ["rust", "bigint"] }

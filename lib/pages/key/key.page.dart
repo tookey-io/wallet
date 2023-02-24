@@ -2,13 +2,16 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:tookey/models/key_session.dart';
 import 'package:tookey/pages/key/key.card.dart';
 import 'package:tookey/pages/key/key.popup.dart';
 import 'package:tookey/pages/wallet_connect/wallet_connect.page.dart';
 import 'package:tookey/services/backend_client.dart';
 import 'package:tookey/services/qr_scanner.dart';
 import 'package:tookey/state.dart';
+import 'package:tookey/widgets/active_session_button.dart';
 import 'package:tookey/widgets/toaster.dart';
+import 'package:tookey/widgets/wallet_connect_form.dart';
 
 enum KeyAction { share }
 
@@ -23,17 +26,17 @@ class KeyPage extends StatefulWidget {
 
 class _KeyPageState extends State<KeyPage> {
   late Future<String?> _keySecret;
-  String? _connectionUrl;
 
-  void _connect(String? connectionUrl) {
-    log(_connectionUrl!);
+  void _connect(String connectionUrl) {
+    log(connectionUrl);
+
     Navigator.push(
       context,
       MaterialPageRoute<WalletConnectPage>(
         builder: (context) {
           return WalletConnectPage(
             keyRecord: widget.keyRecord,
-            connectionUrl: _connectionUrl!,
+            connectionUrl: connectionUrl,
           );
         },
       ),
@@ -45,6 +48,8 @@ class _KeyPageState extends State<KeyPage> {
     return Consumer<AppState>(
       builder: (context, state, child) {
         _keySecret = state.readShareableKey().then((secret) => secret ?? '');
+
+        final sessions = state.readSessions();
 
         return Scaffold(
           appBar: AppBar(
@@ -64,80 +69,71 @@ class _KeyPageState extends State<KeyPage> {
                   child: Column(
                     children: [
                       KeyCard(keyRecord: widget.keyRecord),
+                      FutureBuilder<List<KeySession>>(
+                        future: sessions,
+                        builder: (context, snapshot) {
+                          // ignore: lines_longer_than_80_chars
+                          log('snapshot.data: ${snapshot.data?.length.toString()}');
+                          final keySessions = snapshot.data?.where(
+                            (element) =>
+                                element.publicKey == widget.keyRecord.publicKey,
+                          );
+                          return keySessions != null
+                              ? Column(
+                                  children: [
+                                    ...keySessions.map(
+                                      (session) => ActiveSessionButton(
+                                        key: Key(session.hashCode.toString()),
+                                        sessionStore: session.store,
+                                        network: state
+                                            .getNetwork(session.store.chainId),
+                                        onTap: () {
+                                          log('click session');
+
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute<
+                                                WalletConnectPage>(
+                                              builder: (context) {
+                                                return WalletConnectPage(
+                                                  keyRecord: widget.keyRecord,
+                                                  sessionStore: session.store,
+                                                );
+                                              },
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                    if (keySessions.isNotEmpty)
+                                      TextButton(
+                                        onPressed: () =>
+                                            state.removeAllSessions(),
+                                        child: const Text('Close all sessions'),
+                                      ),
+                                    if (keySessions.length < 3)
+                                      Column(
+                                        children: [
+                                          WalletConnectForm(
+                                            key: const Key('walletConnectForm'),
+                                            onUrl: _connect,
+                                          ),
+                                        ],
+                                      )
+                                  ],
+                                )
+                              : const Center(
+                                  child: CircularProgressIndicator(),
+                                );
+                        },
+                      ),
                       const Spacer(),
-                      const Icon(
-                        Icons.add_link,
-                        size: 48,
-                        color: Colors.grey,
-                      ),
-                      const Padding(padding: EdgeInsets.all(8)),
-                      const Text(
-                        'Wallet connect',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const Padding(padding: EdgeInsets.all(6)),
-                      const Text(
-                        'Paste connection url below or use QR scanner',
-                      ),
-                      const Padding(padding: EdgeInsets.all(10)),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Flexible(
-                            child: TextField(
-                              decoration: const InputDecoration(
-                                isDense: true,
-                                label: Text('Connection string'),
-                                fillColor: Colors.black12,
-                                enabledBorder: OutlineInputBorder(
-                                  borderSide: BorderSide(
-                                      color: Colors.white12, width: 2),
-                                ),
-                                border: OutlineInputBorder(),
-                              ),
-                              onChanged: (value) => setState(() {
-                                _connectionUrl = value;
-                              }),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          ElevatedButton(
-                            onPressed: () => _connect(_connectionUrl),
-                            style: ElevatedButton.styleFrom(
-                              minimumSize: const Size(0, 50),
-                            ),
-                            child: Row(
-                              children: const [
-                                Icon(Icons.cast_connected),
-                                Text(' Connect'),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const Spacer(flex: 2),
-                    ],
-                  ),
-                );
-              } else {
-                return Center(
-                  child: Column(
-                    children: const [
-                      SizedBox(height: 20),
-                      Text(
-                        'Add secret button',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
                     ],
                   ),
                 );
               }
+
+              return const CircularProgressIndicator();
             },
           ),
           bottomNavigationBar: BottomAppBar(
@@ -154,13 +150,14 @@ class _KeyPageState extends State<KeyPage> {
                 MaterialPageRoute<QRScanner>(
                   builder: (context) {
                     return QRScanner(
+                      bottom: WalletConnectForm(
+                        key: const Key('walletConnectForm'),
+                        onUrl: _connect,
+                      ),
                       onData: (value) {
                         Navigator.pop(context);
                         if (value.startsWith('wc:')) {
-                          setState(() {
-                            _connectionUrl = value;
-                          });
-                          _connect(_connectionUrl);
+                          _connect(value);
                         } else {
                           Toaster.error('Incorrect QR Code');
                         }

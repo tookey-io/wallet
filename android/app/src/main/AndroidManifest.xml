@@ -1,9 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="io.tookey">
    <uses-permission android:name="android.permission.USE_FINGERPRINT"/>
-   <queries>
+   <!-- <queries>
         <package android:name="org.telegram.messenger"/>
-   </queries>
+   </queries> -->
+   <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
    <application
         android:label="tookey"
         android:name="${applicationName}"
@@ -28,8 +29,15 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
-                <data android:scheme="tookey" android:host="tookey.io" />
             </intent-filter>
+
++            <intent-filter>
++                <action android:name="android.intent.action.VIEW" />
++                <category android:name="android.intent.category.DEFAULT" />
++                <category android:name="android.intent.category.BROWSABLE" />
++                <!-- Accepts URIs that begin with YOUR_SCHEME://YOUR_HOST -->
+                <data android:scheme="tookey" />
++            </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->

@@ -2535,9 +2535,9 @@ dependencies = [
 
 [[package]]
 name = "tookey-libtss-ethereum"
-version = "1.2.0"
+version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "45448b1d6c235f5a9c3e81b13b81ce4c53fb52895ef195926d8f515bcfcbda10"
+checksum = "a4f442e71780b9dd1e3789392e3b96e60810d17e1d08a17f624ab7f04000966a"
 dependencies = [
  "anyhow",
  "ethereum-types 0.14.1",

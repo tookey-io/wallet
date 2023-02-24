@@ -1,0 +1,123 @@
+[
+    {
+        "name": "Ethereum",
+        "website": "https://ethereum.org/",
+        "description": "Open source platform to write and distribute decentralized applications.",
+        "explorerUrl": "https://etherscan.io/",
+        "explorerApi": "https://api.etherscan.io/",
+        "rpc": "https://rpc.ankr.com/eth",
+        "symbol": "ETH",
+        "assetsSlug": "ethereum",
+        "chainId": 1
+    },
+    {
+        "name": "Fantom",
+        "website": "https://fantom.foundation",
+        "description": "A DAG-Based Smart-Contract Platform.",
+        "explorerUrl": "https://ftmscan.com",
+        "explorerApi": "https://api.ftmscan.com",
+        "rpc": "https://rpc.ankr.com/fantom",
+        "symbol": "FTM",
+        "assetsSlug": "fantom",
+        "chainId": 250
+    },
+    {
+        "name": "BNB Smart Chain",
+        "website": "https://www.bnbchain.world/en/smartChain",
+        "description": "A blockchain with a full-fledged environment for developing high-performance decentralized applications and cross-chain compatibility with Binance Chain.",
+        "explorerUrl": "https://bscscan.com/",
+        "explorerApi": "https://api.bscscan.com/",
+        "rpc": "https://rpc.ankr.com/bsc",
+        "symbol": "BNB",
+        "assetsSlug": "smartchain",
+        "chainId": 56
+    },
+    {
+        "name": "Polygon",
+        "website": "https://polygon.technology/",
+        "description": "Polygon (Matic) strives to solve the scalability and usability issues, while not compromising on decentralization and leveraging the existing developer community and ecosystem",
+        "explorerUrl": "https://polygonscan.com/",
+        "explorerApi": "https://api.polygonscan.com/",
+        "rpc": "https://rpc.ankr.com/polygon",
+        "symbol": "MATIC",
+        "assetsSlug": "polygon",
+        "chainId": 137
+    },
+    {
+        "name": "Avalanche C-Chain",
+        "website": "http://avax.network",
+        "description": "Avalanche is an open-source platform for launching highly decentralized applications, new financial primitives, and new interoperable blockchains. This is the C-Chain, the default smart contract blockchain on Avalanche that enables the creation of any Ethereum-compatible smart contracts.",
+        "explorerUrl": "https://explorer.avax.network",
+        "explorerApi": "https://api.explorer.avax.network",
+        "rpc": "https://rpc.ankr.com/avalanche",
+        "symbol": "AVAX",
+        "assetsSlug": "avalanchec",
+        "chainId": 43114
+    },
+    {
+        "name": "Arbitrum",
+        "website": "https://offchainlabs.com",
+        "description": "Arbitrum is a Layer 2 cryptocurrency platform that makes smart contracts scalable, fast, and private",
+        "explorerUrl": "https://arbiscan.io",
+        "explorerApi": "https://api.arbiscan.io",
+        "rpc": "https://rpc.ankr.com/arbitrum",
+        "symbol": "ARETH",
+        "assetsSlug": "arbitrum",
+        "chainId": 42161
+    },
+    {
+        "name": "Optimistic Ethereum",
+        "website": "https://optimism.io/",
+        "description": "Optimism is a Layer 2 scaling solution for Ethereum.",
+        "explorerUrl": "https://optimistic.etherscan.io",
+        "explorerApi": "https://api.optimistic.etherscan.io",
+        "rpc": "https://rpc.ankr.com/optimism",
+        "symbol": "OETH",
+        "assetsSlug": "optimism",
+        "chainId": 10
+    },
+    {
+        "name": "Celo",
+        "website": "https://celo.org/",
+        "description": "Celo is an open platform that makes financial tools accessible to anyone with a mobile phone",
+        "explorerUrl": "https://explorer.celo.org/",
+        "explorerApi": "https://api.explorer.celo.org/",
+        "rpc": "https://rpc.ankr.com/celo",
+        "symbol": "CELO",
+        "assetsSlug": "celo",
+        "chainId": 42220
+    },
+    {
+        "name": "IoTeX",
+        "website": "https://iotex.io",
+        "description": "IOTX will be a Decentralized Network for Internet of Things. Powered by a Privacy-Centric Blockchain.",
+        "explorerUrl": "https://iotexscan.io/",
+        "explorerApi": "https://api.iotexscan.io/",
+        "rpc": "https://rpc.ankr.com/iotex",
+        "symbol": "IOTX",
+        "assetsSlug": "iotex",
+        "chainId": 4689
+    },
+    {
+        "name": "Moonbeam",
+        "website": "https://moonbeam.network",
+        "description": "Moonbeam combines the best of both worlds: the familiar and easy-to-use tooling of Ethereum and the scalable, interoperable architecture of Polkadot.",
+        "explorerUrl": "https://moonscan.io",
+        "explorerApi": "https://api.moonscan.io",
+        "rpc": "https://rpc.ankr.com/moonbeam",
+        "symbol": "GLMR",
+        "assetsSlug": "moonbeam",
+        "chainId": 1284
+    },
+    {
+        "name": "Harmony",
+        "website": "https://harmony.one",
+        "description": "Harmony aims to offer a high-throughput, low-latency, and low-fee consensus platform designed to power decentralized economies of the future.",
+        "explorerUrl": "https://explorer.harmony.one/",
+        "explorerApi": "https://api.explorer.harmony.one/",
+        "rpc": "https://rpc.ankr.com/harmony",
+        "symbol": "ONE",
+        "assetsSlug": "harmony",
+        "chainId": 1666600000
+    }
+]

@@ -31,6 +31,19 @@ fn wire_connect_logger_impl(port_: MessagePort) {
         move || move |task_callback| connect_logger(task_callback.stream_sink()),
     )
 }
+fn wire_public_key_to_ethereum_address_impl(port_: MessagePort, public_key: impl Wire2Api<String> + UnwindSafe) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "public_key_to_ethereum_address",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_public_key = public_key.wire2api();
+            move |task_callback| tookey_libtss_ethereum::ethers::public_key_to_ethereum_address(api_public_key)
+        },
+    )
+}
 fn wire_private_key_to_public_key_impl(
     port_: MessagePort,
     private_key: impl Wire2Api<String> + UnwindSafe,
