@@ -189,14 +189,14 @@ class HttpClient {
             reason: NetworkExceptionReason.canceled,
             exception: exception,
           );
-        case DioErrorType.connectTimeout:
+        case DioErrorType.connectionTimeout:
         case DioErrorType.receiveTimeout:
         case DioErrorType.sendTimeout:
           throw NetworkException(
             reason: NetworkExceptionReason.timedOut,
             exception: exception,
           );
-        case DioErrorType.response:
+        case DioErrorType.badResponse:
           // For DioErrorType.response, we are guaranteed to have a
           // response object present on the exception.
           final response = exception.response;
@@ -213,7 +213,7 @@ class HttpClient {
                 statusCode: response.statusCode,
                 data: response.data,
               );
-        case DioErrorType.other:
+        case DioErrorType.unknown:
           if (exception.error is SocketException) {
             throw exceptionMapper?.call(null, exception) ??
                 NetworkResponseException(exception: exception);

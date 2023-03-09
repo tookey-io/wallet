@@ -91,6 +91,13 @@ class Network {
       ? '$blockchainRootUrl/assets/$address/logo.png'
       : null;
 
+  String? tokenExplorerUrl(String address) => explorerUrl != null
+      ? '$explorerUrl/token/$address'
+      : null;
+  String? addressExplorerUrl(String address) => explorerUrl != null
+      ? '$explorerUrl/address/$address'
+      : null;
+
   Map<String, dynamic> toJson() => _$NetworkToJson(this);
 
   @override

@@ -1,3 +1,5 @@
+// ignore_for_file: unused_import
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
@@ -182,9 +184,9 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     final networks =
         DefaultAssetBundle.of(context).loadString('assets/networks.json');
-    debugPrint('_initialUri ${_initialUri.toString()}');
-    debugPrint('_currentUri ${_currentUri.toString()}');
-    if (_err != null) debugPrint('_err ${_err.toString()}');
+    debugPrint('_initialUri $_initialUri');
+    debugPrint('_currentUri $_currentUri');
+    if (_err != null) debugPrint('_err $_err');
 
     final tookeyTheme = FlexThemeData.dark(
       scheme: FlexScheme.custom,
@@ -217,7 +219,7 @@ class _MyAppState extends State<MyApp> {
               // ignore: lines_longer_than_80_chars
               log('netowrks: ${state.networks.map((e) => e.toString()).join('\n')}');
 
-              return const SignTest(title: 'Test sign');
+              // return const SignTest(title: 'Test sign');
 
               if (state.refreshToken == null) {
                 final pattern = RegExp(r'^tookey:\/\/access\/([0-9a-f]+)$');

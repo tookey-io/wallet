@@ -33,7 +33,7 @@ class _SignTestState extends State<SignTest> {
           onReject: () {
             Navigator.pop(context);
           },
-          chainId: 137,
+          chainId: 1,
         );
       },
     );
@@ -67,20 +67,64 @@ class _SignTestState extends State<SignTest> {
                       WCEthereumTransaction.fromJson(
                         // ignore: leading_newlines_in_multiline_strings
                         jsonDecode('''{
-                          "from": "0x97568d242ab0233c55d992aa46cd41e7311fcc14",
-                          "to": "0x794a61358d6845594f94dc1db02a252b5b4814ad",
+                          "from": "0xdef13e0461bd92f2cd4ffacb947b50a5ab2cc998",
+                          "to": "0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2",
                           "nonce": "0x1fa",
                           "gasPrice": "0x21d997647e",
                           "maxFeePerGas": "0x2beeb14e6e",
                           "maxPriorityFeePerGas": "0x758b5a469",
                           "gas": "0x493e0",
                           "value": "0x0",
-                          "data": "0x617ba0370000000000000000000000001bfd67037b42cf73acf2047067bd4f2c47d9bfd6000000000000000000000000000000000000000000000000000000000000113000000000000000000000000097568d242ab0233c55d992aa46cd41e7311fcc140000000000000000000000000000000000000000000000000000000000000000"
+                          "data": "0x617ba037000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb4800000000000000000000000000000000000000000000000000000001dcd65000000000000000000000000000def13e0461bd92f2cd4ffacb947b50a5ab2cc9980000000000000000000000000000000000000000000000000000000000000000"
                         }''') as Map<String, dynamic>,
                       ),
                     );
                   },
                   child: const Text('Sign Tx'),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    await _approveTransactionDialog(
+                      5,
+                      WCEthereumTransaction.fromJson(
+                        // ignore: leading_newlines_in_multiline_strings
+                        jsonDecode('''{
+                          "from": "0xdef13e0461bd92f2cd4ffacb947b50a5ab2cc998",
+                          "to": "0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2",
+                          "nonce": "0x1fa",
+                          "gasPrice": "0x21d997647e",
+                          "maxFeePerGas": "0x2beeb14e6e",
+                          "maxPriorityFeePerGas": "0x758b5a469",
+                          "gas": "0x493e0",
+                          "value": "0x0",
+                          "data": "0x617ba037000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb4800000000000000000000000000000000000000000000000000000001dcd65000000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb480000000000000000000000000000000000000000000000000000000000000000"
+                        }''') as Map<String, dynamic>,
+                      ),
+                    );
+                  },
+                  child: const Text('Sign Behalf Token'),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    await _approveTransactionDialog(
+                      5,
+                      WCEthereumTransaction.fromJson(
+                        // ignore: leading_newlines_in_multiline_strings
+                        jsonDecode('''{
+                          "from": "0xdef13e0461bd92f2cd4ffacb947b50a5ab2cc998",
+                          "to": "0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2",
+                          "nonce": "0x1fa",
+                          "gasPrice": "0x21d997647e",
+                          "maxFeePerGas": "0x2beeb14e6e",
+                          "maxPriorityFeePerGas": "0x758b5a469",
+                          "gas": "0x493e0",
+                          "value": "0x0",
+                          "data": "0x617ba037000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb4800000000000000000000000000000000000000000000000000000001dcd65000000000000000000000000000c30141B657f4216252dc59Af2e7CdB9D8792e1B00000000000000000000000000000000000000000000000000000000000000000"
+                        }''') as Map<String, dynamic>,
+                      ),
+                    );
+                  },
+                  child: const Text('Sign Behalf Contract'),
                 ),
                 const Text('hello world'),
               ],

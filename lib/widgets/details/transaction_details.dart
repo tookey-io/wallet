@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'dart:developer';
 import 'dart:typed_data';
 
+import 'package:flutter/material.dart';
 import 'package:flutter/src/widgets/container.dart';
 import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
@@ -11,19 +12,12 @@ import 'package:http/http.dart';
 import 'package:provider/provider.dart';
 import 'package:tookey/services/networks.dart';
 import 'package:tookey/state.dart';
+import 'package:tookey/widgets/details/method_call.dart';
+import 'package:tookey/widgets/details/method_call_parameter.dart';
+import 'package:tookey/widgets/details/method_signature.dart';
 import 'package:wallet_connect/wallet_connect.dart';
 import 'package:web3dart/crypto.dart';
 import 'package:web3dart/web3dart.dart';
-
-class MethodCall {
-  MethodCall({
-    required this.method,
-    required this.data,
-  });
-
-  final ContractFunction method;
-  final List<dynamic> data;
-}
 
 class TransactionDetails extends StatefulWidget {
   const TransactionDetails({
@@ -54,27 +48,51 @@ class _TransactionDetailsState extends State<TransactionDetails> {
   Network get network => widget.network;
   String? get data => widget.tx.data;
   String? get callSignature => data?.substring(2, 10);
-  MethodCall? _call;
+  Future<MethodCall?> _callFuture = Future.value();
 
   @override
   void initState() {
-    // asynchronous call
-    () async {
-      final abi = isContractCreation ? '{}' : await _requestAbi();
-      log(abi);
-    }();
+    _callFuture = _decodeCall();
 
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Text(jsonEncode(network.toJson()));
+    return FutureBuilder<MethodCall?>(
+      builder: (context, snapshot) {
+        final call = snapshot.data;
+        if (call != null) {
+          final widgets = <Widget>[
+            MethodSignature(call: call),
+          ];
+
+          for (var index = 0; index < call.argsCount; index++) {
+            widgets.add(
+              MethodCallParameter<dynamic>(
+                call: call,
+                parameter: call.getArgument(index),
+                data: call.getArgumentData(index),
+              ),
+            );
+          }
+
+          return Column(
+            children: widgets,
+          );
+        } else {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        }
+      },
+      future: _callFuture,
+    );
   }
 
-  Future<String> _requestAbi() async {
+  Future<MethodCall?> _decodeCall() async {
     if (network.explorerApi == null) {
-      return '{}';
+      return null;
     }
 
     final client = Client();
@@ -93,7 +111,7 @@ class _TransactionDetailsState extends State<TransactionDetails> {
 
     log('Implementation: ${proxy.hex}, $isProxy');
 
-    final abiAddress = isProxy ? proxy.hexEip55 : to.hexEip55; 
+    final abiAddress = isProxy ? proxy.hexEip55 : to.hexEip55;
 
     final uri = Uri.parse(
       '${network.explorerApi!}/api?module=contract&action=getabi&address=$abiAddress',
@@ -102,7 +120,7 @@ class _TransactionDetailsState extends State<TransactionDetails> {
     final response = await http
         .get(
           Uri.parse(
-            'https://raw.githubusercontent.com/tookey-io/extended-abis/main/137/$abiAddress.json',
+            'https://raw.githubusercontent.com/tookey-io/extended-abis/main/$chainId/$abiAddress.json',
           ),
         )
         .then((response) => response.body);
@@ -111,22 +129,30 @@ class _TransactionDetailsState extends State<TransactionDetails> {
 
     final contractMethod = contract.functions
         .firstWhere((element) => bytesToHex(element.selector) == callSignature);
-    final buffer = hexToBytes(data!).sublist(4);
-    final decoded =
-        TupleType(contractMethod.parameters.map((e) => e.type).toList()).decode(
-      buffer.buffer,
-      0,
-    );
 
     log(
       contractMethod.parameters
-          .map((e) =>
-              [e.type.runtimeType.toString(), e.type is AddressType].join(' '))
+          .map(
+            (e) => [
+              e.name,
+              e.type.runtimeType.toString(),
+              e.meta?['description'],
+              e.meta?['kind'],
+            ].join(' '),
+          )
           .join('\n'),
     );
+
+    final decoded =
+        TupleType(contractMethod.parameters.map((e) => e.type).toList()).decode(
+      hexToBytes(data!.substring(10)).buffer,
+      0,
+    );
+    // throw 'unimplemented';
     log(decoded.data.join(', '));
     log(decoded.data.map((e) => e.runtimeType).join(', '));
 
-    return '{}';
+    return MethodCall(
+        method: contractMethod, data: decoded.data, chainId: chainId);
   }
 }
