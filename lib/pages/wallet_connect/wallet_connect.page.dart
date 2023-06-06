@@ -109,10 +109,13 @@ class _WalletConnectPageState extends State<WalletConnectPage> {
     log('onConnect');
   }
 
-  void _disconnect() {
+  Future<void> _disconnect() async {
     log('_disconnect, $mounted');
 
-    setState(_wcClient.killSession);
+    await _wcClient.killSession();
+
+    // JUST UPDATE
+    setState(() {});
   }
 
   void _onDisconnect(int? code, String? reason) {

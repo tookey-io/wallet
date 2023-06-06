@@ -46,12 +46,18 @@ class _QRScannerState extends State<QRScanner> {
             controller: controller,
             onDetect: (barcode) {
               setState(() {
-                result = barcode as Barcode?;
-              });
+                if (result != null) {
+                  return;
+                }
 
-              if (barcode.barcodes.first.rawValue != null) {
-                widget.onData(barcode.barcodes.first.rawValue!);
-              }
+                result = barcode.barcodes.first;
+
+                if (mounted) Navigator.pop(context);
+
+                if (barcode.barcodes.first.rawValue != null) {
+                  widget.onData(barcode.barcodes.first.rawValue!);
+                }
+              });
             },
           ),
           if (widget.bottom != null)

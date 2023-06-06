@@ -134,7 +134,7 @@ class BackendClient {
     return authTokens.refresh;
   }
 
-  Future<List<KeyRecord>?> fetchKeys() async {
+  Future<List<KeyRecord>> fetchKeys() async {
     log('fetchKeys');
 
     if (_accessToken == null) {
@@ -156,7 +156,7 @@ class BackendClient {
       final keys = KeysList.fromJson(response.data!);
       return keys.items;
     } else {
-      return null;
+      return [];
     }
   }
 

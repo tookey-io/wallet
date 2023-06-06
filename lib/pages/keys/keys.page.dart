@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:tookey/pages/key/key.page.dart';
 import 'package:tookey/pages/keys/keys.popup.dart';
 import 'package:tookey/services/backend_client.dart';
 import 'package:tookey/state.dart';
+
+import '../../widgets/toaster.dart';
 
 class KeysPage extends StatefulWidget {
   const KeysPage({super.key, required this.title});
@@ -52,6 +55,19 @@ class _KeysPageState extends State<KeysPage> {
               if (snapshot.data != null) {
                 return ListView(
                   children: [
+                    ListTile(
+                      onTap: () async {
+                        await Clipboard.setData(
+                          ClipboardData(
+                              text: state.refreshToken?.token ?? 'N/A'),
+                        );
+                        await Toaster.success(
+                          'Refresh token copied to clipboard',
+                        );
+                      },
+                      key: const Key('refreshToken'),
+                      title: Text(state.refreshToken?.token ?? 'N/A'),
+                    ),
                     ...state.knownKeys.map(
                       (key) => ListTile(
                         key: Key(key.publicKey),
@@ -60,13 +76,14 @@ class _KeysPageState extends State<KeysPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(key.name),
-                            if (key.description.isNotEmpty) Text(
-                              key.description,
-                              style: const TextStyle(
-                                fontSize: 8,
-                                color: Colors.white60,
-                              ),
-                            )
+                            if (key.description.isNotEmpty)
+                              Text(
+                                key.description,
+                                style: const TextStyle(
+                                  fontSize: 8,
+                                  color: Colors.white60,
+                                ),
+                              )
                           ],
                         ),
                         onTap: () {
@@ -89,13 +106,14 @@ class _KeysPageState extends State<KeysPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(key.name),
-                            if (key.description.isNotEmpty) Text(
-                              key.description,
-                              style: const TextStyle(
-                                fontSize: 8,
-                                color: Colors.white60,
-                              ),
-                            )
+                            if (key.description.isNotEmpty)
+                              Text(
+                                key.description,
+                                style: const TextStyle(
+                                  fontSize: 8,
+                                  color: Colors.white60,
+                                ),
+                              )
                           ],
                         ),
                         onTap: () {

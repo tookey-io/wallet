@@ -106,7 +106,7 @@ class AppState extends ChangeNotifier {
     if (!_networks.containsKey(network.name)) {
       _networks[network.name] = network;
 
-      notifyListeners();
+      // notifyListeners();
     }
   }
 
@@ -344,14 +344,16 @@ class AppState extends ChangeNotifier {
 
   Future<void> fetchKeys() async {
     final keys = await backend?.fetchKeys();
-
-    _knownKeys
-      ..clear()
-      ..addEntries(
-        keys!
-            .where((key) => key.publicKey != '')
-            .map((element) => MapEntry(element.publicKey, element)),
-      );
+    if (keys != null) {
+      log(keys.toString());
+      _knownKeys
+        ..clear()
+        ..addEntries(
+          keys
+              .where((key) => key.publicKey != '')
+              .map((element) => MapEntry(element.publicKey, element)),
+        );
+    }
     // notifyListeners();
   }
 

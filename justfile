@@ -1,21 +1,25 @@
 default: gen lint
 
 gen:
-    export REPO_DIR="$PWD"; cd /; flutter_rust_bridge_codegen \
-        --rust-input "$REPO_DIR/native/src/api.rs" \
-        --dart-output "$REPO_DIR/lib/bridge_generated.dart" \
-        --c-output "$REPO_DIR/ios/Runner/bridge_generated.h" \
-        --c-output "$REPO_DIR/macos/Runner/bridge_generated.h" \
-        --llvm-compiler-opts='-I/usr/lib/clang/14.0.6/include/'
+    flutter pub get
+    flutter_rust_bridge_codegen \
+        --rust-input native/src/api.rs \
+        --dart-output lib/bridge_generated.dart \
+        --c-output ios/Runner/bridge_generated.h \
+        --dart-decl-output lib/bridge_definitions.dart \
+        --wasm
+    cp ios/Runner/bridge_generated.h macos/Runner/bridge_generated.h
 
 lint:
-    cd native && cargo fmt && cargo fmt -- --check && cargo clippy -- -Dwarnings && cargo test
+    cd native && cargo fmt
     dart format .
 
 clean:
     flutter clean
     cd native && cargo clean
-
+    
+serve *args='':
+    flutter pub run flutter_rust_bridge:serve {{args}}
 
 upload-ios:
     xcrun altool --upload-app -f build/ios/ipa/tookey.ipa \

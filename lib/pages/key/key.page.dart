@@ -28,7 +28,7 @@ class _KeyPageState extends State<KeyPage> {
   late Future<String?> _keySecret;
 
   void _connect(String connectionUrl) {
-    log(connectionUrl);
+    log('connect to $connectionUrl');
 
     Navigator.push(
       context,
@@ -155,7 +155,7 @@ class _KeyPageState extends State<KeyPage> {
                         onUrl: _connect,
                       ),
                       onData: (value) {
-                        Navigator.pop(context);
+                        log('QR data: $value');
                         if (value.startsWith('wc:')) {
                           _connect(value);
                         } else {

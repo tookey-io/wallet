@@ -10,6 +10,7 @@ import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/http.dart';
 import 'package:provider/provider.dart';
+import 'package:tookey/services/details.dart';
 import 'package:tookey/services/networks.dart';
 import 'package:tookey/state.dart';
 import 'package:tookey/widgets/details/method_call.dart';
@@ -123,36 +124,45 @@ class _TransactionDetailsState extends State<TransactionDetails> {
             'https://raw.githubusercontent.com/tookey-io/extended-abis/main/$chainId/$abiAddress.json',
           ),
         )
-        .then((response) => response.body);
+        .then((response) => response.ok ? response.body : null);
 
-    final contract = ContractAbi.fromJson(response, 'Contract');
+    final contract =
+        response != null ? ContractAbi.fromJson(response, 'Contract') : null;
 
-    final contractMethod = contract.functions
+    final contractMethod = contract?.functions
         .firstWhere((element) => bytesToHex(element.selector) == callSignature);
 
     log(
-      contractMethod.parameters
-          .map(
-            (e) => [
-              e.name,
-              e.type.runtimeType.toString(),
-              e.meta?['description'],
-              e.meta?['kind'],
-            ].join(' '),
+      contractMethod?.parameters
+              .map(
+                (e) => [
+                  e.name,
+                  e.type.runtimeType.toString(),
+                  e.meta?['description'],
+                  e.meta?['kind'],
+                ].join(' '),
+              )
+              .join('\n') ??
+          'not found contract',
+    );
+
+    final decoded = contractMethod != null
+        ? TupleType(contractMethod.parameters.map((e) => e.type).toList())
+            .decode(
+            hexToBytes(data!.substring(10)).buffer,
+            0,
           )
-          .join('\n'),
-    );
-
-    final decoded =
-        TupleType(contractMethod.parameters.map((e) => e.type).toList()).decode(
-      hexToBytes(data!.substring(10)).buffer,
-      0,
-    );
+        : null;
     // throw 'unimplemented';
-    log(decoded.data.join(', '));
-    log(decoded.data.map((e) => e.runtimeType).join(', '));
+    log(decoded?.data.join(', ') ?? 'not found');
+    log(decoded?.data.map((e) => e.runtimeType).join(', ') ?? 'not found');
 
-    return MethodCall(
-        method: contractMethod, data: decoded.data, chainId: chainId);
+    return contractMethod != null && decoded != null
+        ? MethodCall(
+            method: contractMethod,
+            data: decoded.data,
+            chainId: chainId,
+          )
+        : null;
   }
 }

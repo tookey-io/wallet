@@ -217,6 +217,12 @@ impl NewWithNullPtr for wire_KeygenParams {
     }
 }
 
+impl Default for wire_KeygenParams {
+    fn default() -> Self {
+        Self::new_with_null_ptr()
+    }
+}
+
 impl NewWithNullPtr for wire_SignParams {
     fn new_with_null_ptr() -> Self {
         Self {
@@ -227,6 +233,12 @@ impl NewWithNullPtr for wire_SignParams {
             relay_address: core::ptr::null_mut(),
             timeout_seconds: Default::default(),
         }
+    }
+}
+
+impl Default for wire_SignParams {
+    fn default() -> Self {
+        Self::new_with_null_ptr()
     }
 }
 

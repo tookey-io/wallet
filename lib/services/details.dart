@@ -281,6 +281,8 @@ class TransactionDetailsParser {
   Future<String> _fetchOrCache(String url) {
     if (!_requests.containsKey(url)) {
       _requests[url] = http.get(Uri.parse(url)).then((response) {
+        log('$url response code: ${response.statusCode}');
+        
         if (response.ok) {
           return response.body;
         }

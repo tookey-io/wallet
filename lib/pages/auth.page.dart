@@ -22,6 +22,8 @@ class AuthPage extends StatefulWidget {
 }
 
 class _AuthPageState extends State<AuthPage> {
+  bool authenticating = false;
+
   Future<void> _onQrData(AppState state, String raw) async {
     log('Got a data $raw');
     final pattern = RegExp(r'^tookey:\/\/access\/([0-9a-f]+)$');
@@ -43,7 +45,7 @@ class _AuthPageState extends State<AuthPage> {
       }
     });
 
-    if (mounted) Navigator.pop(context);
+    // if (mounted) Navigator.pop(context);
   }
 
   Future<void> _onTelegramSignin(AppState state) async {
