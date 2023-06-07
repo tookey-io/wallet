@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:tookey/state.dart';
 
-enum KeyPopupAction { share }
+enum KeyPopupAction { share, offline }
 
 class KeyPopup extends StatelessWidget {
   const KeyPopup({super.key});
@@ -21,6 +21,8 @@ class KeyPopup extends StatelessWidget {
               case KeyPopupAction.share:
                 _shareKey(state);
                 break;
+              case KeyPopupAction.offline:
+                break;
             }
           },
           itemBuilder: (context) => <PopupMenuEntry<KeyPopupAction>>[
@@ -29,6 +31,13 @@ class KeyPopup extends StatelessWidget {
               child: ListTile(
                 title: Text('Share key'),
                 leading: Icon(Icons.download),
+              ),
+            ),
+            const PopupMenuItem<KeyPopupAction>(
+              value: KeyPopupAction.offline,
+              child: ListTile(
+                title: Text('Offline mode'),
+                leading: Icon(Icons.wifi_off_rounded),
               ),
             ),
           ],

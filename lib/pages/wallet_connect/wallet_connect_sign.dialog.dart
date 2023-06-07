@@ -155,34 +155,59 @@ class _WalletConnectSignDialogState extends State<WalletConnectSignDialog> {
             network: state.getNetwork(widget.chainId),
           ),
         if (widget.message != null) MessageDetails(message: widget.message!),
-        // Theme(
-        //   data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-        //   child: Padding(
-        //     padding: const EdgeInsets.only(bottom: 8),
-        //     child: ExpansionTile(
-        //       tilePadding: EdgeInsets.zero,
-        //       title: const Text(
-        //         'Message',
-        //         style: TextStyle(fontSize: 16),
-        //       ),
-        //       children: [
-        //         Text(
-        //           [
-        //             'To: ${widget.tx?.to}',
-        //             'Gas limit: ${widget.tx?.gasLimit}',
-        //             'Gas price: ${widget.tx?.gasPrice}',
-        //             widget.data!
-        //           ].join('\n'),
-        //           textAlign: TextAlign.left,
-        //           style: TextStyle(
-        //             fontSize: 13,
-        //             fontFamily: Platform.isIOS ? 'Courier' : 'monospace',
-        //           ),
-        //         ),
-        //       ],
-        //     ),
-        //   ),
-        // ),
+        if (widget.message?.type == WCSignType.PERSONAL_MESSAGE) Theme(
+          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: ExpansionTile(
+              tilePadding: EdgeInsets.zero,
+              title: const Text(
+                'Message',
+                style: TextStyle(fontSize: 16),
+              ),
+              children: [
+                Text(
+                  [
+                    widget.data!
+                  ].join('\n'),
+                  textAlign: TextAlign.left,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontFamily: Platform.isIOS ? 'Courier' : 'monospace',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (widget.message?.type == WCSignType.MESSAGE) Theme(
+          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: ExpansionTile(
+              tilePadding: EdgeInsets.zero,
+              title: const Text(
+                'Message',
+                style: TextStyle(fontSize: 16),
+              ),
+              children: [
+                Text(
+                  [
+                    'To: ${widget.tx?.to}',
+                    'Gas limit: ${widget.tx?.gasLimit}',
+                    'Gas price: ${widget.tx?.gasPrice}',
+                    widget.data!
+                  ].join('\n'),
+                  textAlign: TextAlign.left,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontFamily: Platform.isIOS ? 'Courier' : 'monospace',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
         Consumer<AppState>(
           builder: (context, state, child) {
             return Row(

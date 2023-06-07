@@ -55,19 +55,6 @@ class _KeysPageState extends State<KeysPage> {
               if (snapshot.data != null) {
                 return ListView(
                   children: [
-                    ListTile(
-                      onTap: () async {
-                        await Clipboard.setData(
-                          ClipboardData(
-                              text: state.refreshToken?.token ?? 'N/A'),
-                        );
-                        await Toaster.success(
-                          'Refresh token copied to clipboard',
-                        );
-                      },
-                      key: const Key('refreshToken'),
-                      title: Text(state.refreshToken?.token ?? 'N/A'),
-                    ),
                     ...state.knownKeys.map(
                       (key) => ListTile(
                         key: Key(key.publicKey),
@@ -131,9 +118,9 @@ class _KeysPageState extends State<KeysPage> {
                   ],
                 );
               } else {
-                return Center(
+                return const Center(
                   child: Column(
-                    children: const [
+                    children: [
                       Spacer(),
                       Icon(Icons.no_sim_outlined, size: 48, color: Colors.grey),
                       Padding(padding: EdgeInsets.all(10)),

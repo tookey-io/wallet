@@ -290,8 +290,17 @@ class AppState extends ChangeNotifier {
       );
     }
 
+    // ignore: inference_failure_on_instance_creation
+    await Future.delayed(const Duration(seconds: 3));
+
     final results = await Future.wait(
-      [api.keygen(params: paramsFor(2)), api.keygen(params: paramsFor(3))],
+      [
+        api.keygen(params: paramsFor(2)),
+        Future.delayed(
+          const Duration(seconds: 1),
+          () => api.keygen(params: paramsFor(3)),
+        )
+      ],
     );
 
     final publicKey = await api.privateKeyToPublicKey(

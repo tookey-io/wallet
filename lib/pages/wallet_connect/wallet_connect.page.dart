@@ -231,6 +231,7 @@ class _WalletConnectPageState extends State<WalletConnectPage> {
     final decoded = (message.type == WCSignType.TYPED_MESSAGE)
         ? message.data!
         : ascii.decode(hexToBytes(message.data!));
+    logEvent('decoded: ${decoded}');
 
     if (_wcSessionStore == null) {
       return;

@@ -39,6 +39,7 @@ class BackendClient {
 
           if (e.response?.statusCode == 401) {
             if (options.headers['X-SIGNIN-KEY'] != null) return handler.next(e);
+
             await refreshAccessToken();
 
             options.headers['Authorization'] = 'Bearer ${_accessToken!.token}';
@@ -111,7 +112,7 @@ class BackendClient {
 
     _accessToken = AuthToken.fromJson(response.data!);
 
-    log('refreshAccessToken ${_accessToken!.token}');
+    // log('refreshAccessToken ${_accessToken!.token}');
   }
 
   Future<AuthToken> signin(String apiKey) async {
