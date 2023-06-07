@@ -1,7 +1,17 @@
-# Tookey
+# Tookey Mobile Signer
 
-This repository serves as a template for Flutter projects calling into native Rust
-libraries via `flutter_rust_bridge`.
+Mobile Signer by Tookey is a user-friendly application designed to bring robust security and convenience to your Web3 operations. From key generation to transaction signing, our mobile signer keeps you in control, emphasizing a self-sovereign approach towards asset management.
+
+## Core Features:
+
+1. Distributed Key Generation from UI: Say goodbye to complex infrastructure setups. Generate your keys effortlessly with the Mobile Signer's intuitive user interface.
+
+2. Full Authority with Signing Process Participation: Keep full control over your keys by actively participating in the signing process from your personal device.
+
+3. Interact with DApps via WalletConnect: Seamlessly interact with DApps supporting WalletConnect protocol. No need to import your keys anywhere. Just scan the QR code and you're good to go.
+
+4. Self-Sovereign with Offline Signing: Load the second part of your key from cold storage and sign transactions offline, maintaining self-sovereignty without the need for Tookey.
+
 
 ## Getting Started
 
@@ -13,8 +23,10 @@ To begin, ensure that you have a working installation of the following items:
 -   For Android targets:
     -   Install [cargo-ndk](https://github.com/bbqsrc/cargo-ndk#installing)
     -   Install Android NDK 22, then put its path in one of the `gradle.properties`, e.g.:
+-   For MacOS and iOS:
+    -   Install [XCode](https://developer.apple.com/xcode/)
 
-```
+```sh
 echo "ANDROID_NDK=.." >> ~/.gradle/gradle.properties
 ```
 
@@ -28,10 +40,8 @@ to learn how to write and use binding code.
 
 .env
 
-```
-TEST_ENV=true
-BACKEND_API_URL=http://localhost:2000
-RELAY_URL=http://localhost:8000
-TELEGRAM_BOT=tookey_dev_bot
-NODE_URL=https://data-seed-prebsc-2-s3.binance.org:8545/
+```sh
+BACKEND_API_URL=https://backend.apps-production.tookey.cloud # or your self-hosted URI
+RELAY_URL=https://relay1.apps-production.tookey.cloud # or your self-hosted URI
+TELEGRAM_BOT=tookey_bot # or your Telegram Bot handle
 ```
